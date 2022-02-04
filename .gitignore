@@ -1,0 +1,7 @@
+*build/*
+*export.hpp
+cmake/*
+cmake-build-debug/*
+cmake-build-release/*
+.idea/*
+out/*
