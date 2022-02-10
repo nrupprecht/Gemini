@@ -14,7 +14,7 @@
 
 namespace gemini::text {
 
-class GEMINI_EXPORT TextBox : public Shape {
+ class GEMINI_EXPORT TextBox : public gemini::core::Shape {
  public:
 
   explicit TextBox(std::shared_ptr<TrueTypeFontEngine> ttf);
@@ -29,7 +29,7 @@ class GEMINI_EXPORT TextBox : public Shape {
 
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
 
-  void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
+  void DrawOnBitmap(gemini::core::Bitmap& bitmap, const gemini::core::Canvas* canvas) const override;
 
  private:
 

@@ -11,13 +11,17 @@
 
 #include <random>
 
-namespace gemini {
+namespace gemini::core {
 
 namespace color {
 
 struct GEMINI_EXPORT PixelColor {
   constexpr PixelColor(int r, int g, int b, int a = 255)
-      : red(r), green(g), blue(b), alpha(a) {}
+    : red(r)
+    , green(g)
+    , blue(b)
+    , alpha(a)
+    {}
 
   unsigned char red{}, green{}, blue{}, alpha = 255;
 
@@ -92,7 +96,10 @@ class Bitmap::Impl {
   Impl() = default;
 
   Impl(int width, int height)
-      : width_(width), height_(height), pxhi_(width), pyhi_(height) {}
+    : width_(width)
+    , height_(height)
+    , pxhi_(width)
+    , pyhi_(height) {}
 
   virtual ~Impl() = default;
 
@@ -154,7 +161,7 @@ class EasyBMPImpl : public Bitmap::Impl {
   //! \brief Array of pixel precedences. New writes must have z value greater than (or equal to depending on the
   //! overwrite type) this value to overwrite the pixel.
   std::vector<double> zarray_;
-  EasyBMP::BMP bitmap_;
+  BMP bitmap_;
 };
 
 } // namespace gemini

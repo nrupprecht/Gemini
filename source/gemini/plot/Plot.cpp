@@ -5,8 +5,10 @@
 #include "gemini/plot/Plot.h"
 // Other files.
 #include "gemini/text/TextBox.h"
+#include "gemini/core/shapes/Shapes.h"
 
 using namespace gemini;
+using namespace gemini::core;
 using namespace gemini::plot;
 
 Figure::Figure(int width, int height)
@@ -36,13 +38,13 @@ void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, co
   // Plot points to cover gaps.
   auto last_point = gemini::MakeCoordinatePoint(x[0], y[0]);
   plotting_canvas_->AddShape(
-      std::make_shared<gemini::Circle>(last_point,
+      std::make_shared<Circle>(last_point,
                                        Distance{0.5 * line_thickness, LocationType::Pixels},
                                        color_palette_[palette_index_]));
   for (int i = 1; i < x.size(); ++i) {
     auto point = gemini::MakeCoordinatePoint(x[i], y[i]);
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::Circle>(point,
+        std::make_shared<Circle>(point,
                                          Distance{0.5 * line_thickness, LocationType::Pixels},
                                          color_palette_[palette_index_]));
     last_point = point;
@@ -53,7 +55,7 @@ void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, co
   for (int i = 1; i < x.size(); ++i) {
     auto point = gemini::MakeCoordinatePoint(x[i], y[i]);
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::XiaolinWuThickLine>(last_point,
+        std::make_shared<XiaolinWuThickLine>(last_point,
                                                      point,
                                                      color_palette_[palette_index_],
                                                      line_thickness));
@@ -78,7 +80,7 @@ void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y,
   for (int i = 1; i < x.size(); ++i) {
     auto point = gemini::MakeCoordinatePoint(x[i], y[i]);
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::Circle>(point,
+        std::make_shared<Circle>(point,
                                          Distance{2.5, LocationType::Pixels},
                                          plot_color));
   }
@@ -101,7 +103,7 @@ void Figure::PlotErrorbars(const std::vector<double>& x,
   }
 
   const double thickness = 2.;
-  auto& plot_color = color_palette_[palette_index_];
+  auto &plot_color = color_palette_[palette_index_];
 
   // Plot points.
   for (int i = 0; i < x.size(); ++i) {
@@ -109,42 +111,42 @@ void Figure::PlotErrorbars(const std::vector<double>& x,
     auto point2 = gemini::MakeCoordinatePoint(x[i], y[i] + err[i]);
     // Vertical error spread.
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::XiaolinWuThickLine>(point1,
-                                                     point2,
-                                                     plot_color,
-                                                     thickness));
+        std::make_shared<XiaolinWuThickLine>(point1,
+                                             point2,
+                                             plot_color,
+                                             thickness));
 
     // Top bar.
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::Ray>(point1,
-                                      gemini::Displacement{5, 0,
-                                                           LocationType::Pixels,
-                                                           LocationType::Pixels},
-                                      plot_color,
-                                      thickness));
+        std::make_shared<Ray>(point1,
+                              gemini::Displacement{5, 0,
+                                                   LocationType::Pixels,
+                                                   LocationType::Pixels},
+                              plot_color,
+                              thickness));
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::Ray>(point1,
-                                      gemini::Displacement{-5, 0,
-                                                           LocationType::Pixels,
-                                                           LocationType::Pixels},
-                                      plot_color,
-                                      thickness));
+        std::make_shared<Ray>(point1,
+                              gemini::Displacement{-5, 0,
+                                                   LocationType::Pixels,
+                                                   LocationType::Pixels},
+                              plot_color,
+                              thickness));
 
     // Bottom bar.
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::Ray>(point2,
-                                      gemini::Displacement{5, 0,
-                                                           LocationType::Pixels,
-                                                           LocationType::Pixels},
-                                      plot_color,
-                                      thickness));
+        std::make_shared<Ray>(point2,
+                              gemini::Displacement{5, 0,
+                                                   LocationType::Pixels,
+                                                   LocationType::Pixels},
+                              plot_color,
+                              thickness));
     plotting_canvas_->AddShape(
-        std::make_shared<gemini::Ray>(point2,
-                                      gemini::Displacement{-5, 0,
-                                                           LocationType::Pixels,
-                                                           LocationType::Pixels},
-                                      plot_color,
-                                      thickness));
+        std::make_shared<Ray>(point2,
+                              gemini::Displacement{-5, 0,
+                                                   LocationType::Pixels,
+                                                   LocationType::Pixels},
+                              plot_color,
+                              thickness));
   }
 
   if (!label.empty()) {
@@ -191,11 +193,15 @@ void Figure::ToFile(const std::string& filepath) {
           MakeRelativePoint(0, 1),
           MakeRelativePoint(1, 1),
           color::Black));
+
   // ==================================================================
   // Set up relationships
   // ==================================================================
-  
+
   image_.ClearRelationships();
+
+  // Calculate coordinates.
+  image_.CalculateCanvasCoordinates();
 
   // Check whether we need a legend.
   if (!legend_data_.empty()) {
@@ -216,6 +222,66 @@ void Figure::ToFile(const std::string& filepath) {
   // image_.Relation_Fix(0, CanvasPart::Right, 1, CanvasPart::Right, -15);
   image_.Relation_Fix(0, CanvasPart::Top, 1, CanvasPart::Top, -15);
   image_.Relation_Fix(0, CanvasPart::Bottom, 1, CanvasPart::Bottom, 64);
+
+  // Create any plot axis ticks and numbering.
+  auto coordinates = image_.GetCanvasCoordinateDescription(plotting_canvas_);
+
+  // Determine the length, in pixels, of the x and y ticks so that they are the same size.
+  double tick_length = std::max(5, static_cast<int>(0.01 * std::min(image_.GetWidth(), image_.GetHeight())));
+
+  // TODO: Improve tick positioning choices.
+
+  // Determine where to make x - ticks.
+  if (!std::isnan(coordinates.left)) {
+    int target_num_ticks = 5;
+    auto logscale = std::floor(std::log10(coordinates.right - coordinates.left));
+    auto scale = std::pow(10, logscale);
+    auto dtick = scale / target_num_ticks;
+    auto left_coord = std::floor(coordinates.left / dtick) * dtick;
+
+    double coord = left_coord;
+    while (coord <= coordinates.right) {
+      if (coord < coordinates.left) {
+        coord += dtick;
+        continue;
+      }
+
+      plotting_canvas_->AddShape(
+          std::make_shared<gemini::core::Ray>(
+              Point{coord, 0, LocationType::Coordinate, LocationType::Proportional},
+              Displacement{0, tick_length, LocationType::Pixels, LocationType::Pixels},
+              color::Black,
+              2));
+      coord += dtick;
+    }
+  }
+  // Determine where to make y - ticks.
+  if (!std::isnan(coordinates.top)) {
+
+
+    int target_num_ticks = 5;
+    auto logscale = std::floor(std::log10(coordinates.top - coordinates.bottom));
+    auto scale = std::pow(10, logscale);
+    auto dtick = scale / target_num_ticks;
+    auto bottom_coord = std::floor(coordinates.bottom / dtick) * dtick;
+
+    double coord = bottom_coord;
+    while (coord <= coordinates.top) {
+      if (coord < coordinates.bottom) {
+        coord += dtick;
+        continue;
+      }
+
+      plotting_canvas_->AddShape(
+          std::make_shared<gemini::core::Ray>(
+              Point{0, coord, LocationType::Proportional, LocationType::Coordinate},
+              Displacement{tick_length, 0., LocationType::Pixels, LocationType::Pixels},
+              color::Black,
+              2));
+      coord += dtick;
+    }
+  }
+
 
   auto bitmap = image_.ToBitmap();
   bitmap.ToFile(filepath);

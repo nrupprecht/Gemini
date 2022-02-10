@@ -10,7 +10,7 @@
 
 namespace gemini::plot {
 
-inline GEMINI_EXPORT std::vector<color::PixelColor> DefaultColorPalette() {
+inline GEMINI_EXPORT std::vector<core::color::PixelColor> DefaultColorPalette() {
   return {
       { 204, 000, 000, 255},
       { 255, 255, 000, 255},
@@ -23,7 +23,7 @@ inline GEMINI_EXPORT std::vector<color::PixelColor> DefaultColorPalette() {
   };
 }
 
-inline GEMINI_EXPORT std::vector<color::PixelColor> ColorPaletteHLS() {
+inline GEMINI_EXPORT std::vector<core::color::PixelColor> ColorPaletteHLS() {
   return {
       { 204, 102,  92, 255},
       { 215, 195, 104, 255},
@@ -56,24 +56,24 @@ class GEMINI_EXPORT Figure {
   void ToFile(const std::string& filepath);
 
   //! \brief Get the underlying Image for the figure.
-  Image& GetImage();
+  core::Image& GetImage();
 
  private:
   //! \brief Switch to the next color in the palette.
   void updateColorPalette();
 
   //! \brief The image the figure writes on.
-  Image image_;
+  core::Image image_;
 
   //! \brief The canvas on which the main plotting occurs.
-  Canvas* plotting_canvas_;
+  core::Canvas* plotting_canvas_;
 
-  std::vector<color::PixelColor> color_palette_;
+  std::vector<core::color::PixelColor> color_palette_;
   int palette_index_ = 0;
 
   //! \brief A structure that stores some data about entries in a legend.
   struct LegendEntry {
-    color::PixelColor color;
+    core::color::PixelColor color;
     std::string label;
   };
 

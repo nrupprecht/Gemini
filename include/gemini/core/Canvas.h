@@ -12,7 +12,7 @@
 #include <map>
 #include <array>
 
-namespace gemini {
+namespace gemini::core {
 
 
 struct GEMINI_EXPORT CanvasLocation {
@@ -38,7 +38,11 @@ enum class GEMINI_EXPORT CanvasPart {
 //! \brief Represents a relationship between two canvases.
 struct FixRelationship {
   FixRelationship(int c1_num, int c2_num, CanvasPart c1_part, CanvasPart c2_part, double px_diff)
-  : canvas1_num(c1_num), canvas2_num(c2_num), canvas1_part(c1_part), canvas2_part(c2_part), pixels_diff(px_diff)
+  : canvas1_num(c1_num)
+  , canvas2_num(c2_num)
+  , canvas1_part(c1_part)
+  , canvas2_part(c2_part)
+  , pixels_diff(px_diff)
   {}
 
   int canvas1_num, canvas2_num;
@@ -96,26 +100,32 @@ class GEMINI_EXPORT Image {
   //! \brief Get the location of one of the Image's canvases.
   const CanvasLocation& GetLocation(const Canvas* canvas) const;
 
+  int GetWidth() const;
+  int GetHeight() const;
+
   //! \brief Render the Image to a bitmap.
   NO_DISCARD Bitmap ToBitmap() const;
 
   //! \brief Calculate all canvas sizes.
   void CalculateImage() const;
 
+  //! \brief Determine the (pixel) locations of each canvas relative to the master canvas.
+  void CalculateCanvasLocations() const;
+
+  //! \brief Determine the coordinate system for each canvas that requires a coordinate system.
+  void CalculateCanvasCoordinates() const;
+
+  //! \brief Get the coordinate description of a canvas.
+  const CoordinateDescription& GetCanvasCoordinateDescription(Canvas* canvas) const;
+
  protected:
   //! \brief Add a canvas to the image. Also adds entries for storing the canvas locations and canvas coordinate system.
   void registerCanvas(Canvas* canvas);
 
-  //! \brief Determine the (pixel) locations of each canvas relative to the master canvas.
-  void calculateCanvasLocations() const;
-
-  //! \brief Determine the coordinate system for each canvas that requires a coordinate system.
-  void calculateCanvasCoordinates() const;
-
   //! \brief Determine the maximum and minimum coordinate points of a canvas in the x and y directions.
   //!
   //! If there are no objects with coordinates in x or y, those max/min coordinates will be quiet NaNs.
-  static std::array<double, 4> getMinMaxCoordinates(Canvas* canvas) ;
+  static std::array<double, 4> getMinMaxCoordinates(Canvas* canvas);
   void describeCoordinates(class Canvas* canvas, const std::array<double, 4>& min_max_coords) const;
 
   ///========================================================================

@@ -23,9 +23,9 @@ class GEMINI_EXPORT TrueTypeFontEngine {
  public:
   explicit TrueTypeFontEngine(std::shared_ptr<TrueType> font, PointSize point_size, unsigned int resolution);
 
-  NO_DISCARD Bitmap MakeCharacter(uint16 char_number) const;
+  NO_DISCARD core::Bitmap MakeCharacter(uint16 char_number) const;
 
-  void WriteCharacter(uint16 char_number, Bitmap& bmp, int16 x, int16 y, bool shift_is_pixels = true) const;
+  void WriteCharacter(uint16 char_number, core::Bitmap& bmp, int16 x, int16 y, bool shift_is_pixels = true) const;
 
   NO_DISCARD double GetScale() const;
 
@@ -41,10 +41,10 @@ class GEMINI_EXPORT TrueTypeFontEngine {
   void PrepareCharacter(uint16 char_number) const;
 
   //! \brief Get the spline of the character that will be written with WriteCharacter.
-  NO_DISCARD shapes::BezierCurve& GetCharacter() const;
+  NO_DISCARD core::shapes::BezierCurve& GetCharacter() const;
 
   //! \brief Write the character to a bitmap.
-  void WriteCharacter(Bitmap& bmp, const color::PixelColor& color, double z = 0.) const;
+  void WriteCharacter(core::Bitmap& bmp, const core::color::PixelColor& color, double z = 0.) const;
 
  private:
 
@@ -56,7 +56,7 @@ class GEMINI_EXPORT TrueTypeFontEngine {
   NO_DISCARD const TrueType::GlyphData &getGlyph(uint16 char_number) const;
 
   //! \brief The spline of the character being prepared.
-  mutable shapes::BezierCurve spline_;
+  mutable core::shapes::BezierCurve spline_;
 
   //! \brief The true type font that this engine runs.
   std::shared_ptr<TrueType> font_;
@@ -66,6 +66,11 @@ class GEMINI_EXPORT TrueTypeFontEngine {
 
   //! \brief The application resolution.
   unsigned int resolution_;
+
+  uint16 platform_id_;
+  uint16 encoding_id_;
+  //! \brief The glyph map that should be used, based on the selected platform/encoding ID.
+  std::map<uint16, uint16>* glyph_map = nullptr;
 };
 
 }

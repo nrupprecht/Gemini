@@ -103,6 +103,11 @@ class GEMINI_EXPORT TrueType {
     return data;
   }
 
+  template<typename Integer_t>
+  void fill(Integer_t& x) const {
+    x = read<Integer_t>();
+  }
+
   //! \brief Extract a string from the file.
   NO_DISCARD std::string getString(int num_chars) const;
 
@@ -127,6 +132,12 @@ class GEMINI_EXPORT TrueType {
 
   //! \brief Read the HMTX table. Must be done after reading the HHEA table and MAXP table.
   void readHMTXTable();
+
+  //! \brief Read the name table.
+  void readNAMETable();
+
+  //! \brief Read the post table.
+  void readPOSTTable();
 
   //! \brief Read the LOCA table.
   void readLOCATable();
@@ -213,6 +224,35 @@ class GEMINI_EXPORT TrueType {
     std::vector<int16> left_side_bearings;
   } hmtx_table_;
 
+  // Name table
+  struct NAMETable {
+    uint16 version;
+    uint16 count;
+    Offset16 storage_offset;
+    // NameRecord[count]
+
+    // For version 1 only
+    uint16 lang_tag_count;
+    // LangTagRecord[lang_tag_count]
+
+    // Storage of actual string data.
+  } name_table_;
+
+  //! \brief Postscript table.
+  //!
+  //! Per the spec, "This table contains additional information needed to use TrueType or OpenType fonts on PostScript printers"
+  struct POSTTable {
+    Version16Dot16 version;
+    Fixed italic_angle;
+    FWORD underline_position;
+    FWORD underline_thickness;
+    uint32 is_fixed_pitch;
+    uint32 min_mem_type_42;
+    uint32 max_mem_type_42;
+    uint32 min_mem_type_1;
+    uint32 max_mem_type_1;
+  } post_table_;
+
   // HDMX table (horizontal device metrics). Only for MAC fonts.
   struct HDMXTable {} hdmx_table_;
 
@@ -230,7 +270,7 @@ class GEMINI_EXPORT TrueType {
 
     GlyphType type = GlyphType::Simple;
 
-    shapes::BezierCurve spline;
+    gemini::core::shapes::BezierCurve spline;
 
     std::vector<uint8> instructions_{};
 
@@ -254,8 +294,8 @@ class GEMINI_EXPORT TrueType {
     uint16 num_tables;
     std::vector<CMAPEncoding> encoding_records;
 
-    //! \brief Map from unicode -> glyph index.
-    std::map<uint16, uint16> glyph_index_map;
+    //! \brief A map from unicode -> glyph index for each encoding record.
+    std::vector<std::map<uint16, uint16>> glyph_index_map;
   } cmap_table_;
 
   //! \brief Encodes "format 4," the segment mapping to delta values format.
@@ -285,6 +325,9 @@ class GEMINI_EXPORT TrueType {
   //! \brief Parse format data in format 4.
   //! Reference: https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#format-4-segment-mapping-to-delta-values.
   Format4Data parseFormat4();
+
+  //! \brief Parse format 14 data, "Unicode variation sequences."
+  void parseFormat14();
 
  private:
   //! \brief String (array of chars) representing the entire file.

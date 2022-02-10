@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
   // Read font description.
   auto true_type = std::make_shared<gemini::text::TrueType>();
   true_type->ReadTTF("/Users/nathaniel/Documents/times.ttf");
+  // true_type->ReadTTF("/Users/nathaniel/Documents/NotoSansSC-Black.otf");
 
   auto engine = std::make_shared<gemini::text::TrueTypeFontEngine>(true_type, 20, 250);
 
@@ -79,16 +80,14 @@ int main(int argc, char **argv) {
   figure.PlotErrorbars(x, y7, err);
   figure.Scatter(x, y8);
 
-  auto& image = figure.GetImage();
-
-
-  auto text = std::make_shared<gemini::text::TextBox>(engine);
-  text->SetFontSize(10);
-  // text->SetAngle(gemini::math::PI / 2);
-  text->SetAnchor(gemini::MakeRelativePoint(0., 0.06));
-  text->AddText("To all those haters out there, I've just got to say, I don't have any time for you!");
-  text->SetZOrder(1);
-  image.GetMasterCanvas()->AddShape(text);
+//  auto& image = figure.GetImage();
+//  auto text = std::make_shared<gemini::text::TextBox>(engine);
+//  text->SetFontSize(10);
+//  // text->SetAngle(gemini::math::PI / 2);
+//  text->SetAnchor(gemini::MakeRelativePoint(0., 0.10));
+//  text->AddText("To all those haters out there, I've just got to say, I don't have any time for you!");
+//  text->SetZOrder(5);
+//  image.GetMasterCanvas()->AddShape(text);
 
   figure.ToFile("../../out/figure.bmp");
 

@@ -6,49 +6,13 @@
 #define GEMINI_INCLUDE_GEMINI_SHAPES_H_
 
 #include "gemini/core/Bitmap.h"
+#include "gemini/core/Positionable.h"
 
-namespace gemini {
+namespace gemini::core {
 
 // Forward declaration to Canvas.
 class Canvas;
 
-
-enum class GEMINI_EXPORT LocationType {
-  Proportional, Coordinate, Pixels
-};
-
-struct GEMINI_EXPORT Point {
-  double x, y;
-  LocationType type_x, type_y;
-};
-
-inline GEMINI_EXPORT Point MakeCoordinatePoint(double x, double y) {
-  return Point{x, y, LocationType::Coordinate, LocationType::Coordinate};
-}
-
-inline GEMINI_EXPORT Point MakeRelativePoint(double x, double y) {
-  return Point{x, y, LocationType::Proportional, LocationType::Proportional};
-}
-
-inline GEMINI_EXPORT Point MakePixelPoint(double x, double y) {
-  return Point{x, y, LocationType::Pixels, LocationType::Pixels};
-}
-
-//! \brief Represents a displacement, e.g. from a point.
-struct GEMINI_EXPORT Displacement {
-  double dx, dy;
-  LocationType type_dx, type_dy;
-};
-
-struct GEMINI_EXPORT Distance {
-  double distance;
-  LocationType type;
-};
-
-//! \brief A bounding box, in coordinate space.
-struct GEMINI_EXPORT CoordinateBoundingBox {
-  double left, right, bottom, top;
-};
 
 //! \brief Abstract base class for shapes that can be drawn on bitmaps.
 class GEMINI_EXPORT Shape {
@@ -137,6 +101,6 @@ struct GEMINI_EXPORT Circle final : public Shape {
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
 };
 
-} // namespace gemini
+} // namespace gemini::core
 
 #endif //GEMINI_INCLUDE_GEMINI_SHAPES_H_

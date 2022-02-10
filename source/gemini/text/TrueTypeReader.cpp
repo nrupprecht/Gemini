@@ -92,34 +92,66 @@ void TrueType::ReadTTF(const std::string &filename) {
     }
   }
 
+  for (auto [tag, table] : tables_) {
+    std::cout << tag << std::endl;
+  }
+
+  // ============================================================================================================
+  // The required tables (for OpenType or TrueType) are cmap, head, hhea, hmtx, maxp, name, OS/2, post.
+  // ============================================================================================================
+
   GEMINI_ASSERT(tables_.find("head") != tables_.end(), "missing required table \"head\"");
   readHeadTable();
+
+  // Name table.
+  // *  https://docs.microsoft.com/en-us/typography/opentype/spec/name
+  GEMINI_ASSERT(tables_.find("name") != tables_.end(), "missing required table \"name\"");
+  readNAMETable();
 
   // Maximum profile table. Establishes the memory requirements for this font.
   // *  https://docs.microsoft.com/en-us/typography/opentype/spec/maxp
   GEMINI_ASSERT(tables_.find("maxp") != tables_.end(), "missing required table \"maxp\"");
   readMAXPTable();
 
+  // Horizontal header table
+  // *  https://docs.microsoft.com/en-us/typography/opentype/spec/hhea
   GEMINI_ASSERT(tables_.find("hhea") != tables_.end(), "missing required table \"hhea\"");
   readHHEATable();
 
-  // Horizontal metrics table.
+  // Horizontal metrics table. Depends on the maxp table.
   // *  https://docs.microsoft.com/en-us/typography/opentype/spec/hmtx
   GEMINI_ASSERT(tables_.find("hmtx") != tables_.end(), "missing required table \"hmtx\"");
   readHMTXTable();
 
-  GEMINI_ASSERT(tables_.find("loca") != tables_.end(), "missing required table \"loca\"");
-  readLOCATable();
-
-  // Glyph data.
-  GEMINI_ASSERT(tables_.find("glyf") != tables_.end(), "missing required table \"glyf\"");
-  readGLYFTable();
-
-  // Character to Glyph Index Mapping Table
+  // Character to Glyph Index Mapping table.
   // *  https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#format-4-segment-mapping-to-delta-values
   // *  https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6cmap.html
   GEMINI_ASSERT(tables_.find("cmap") != tables_.end(), "missing required table \"cmap\"");
   readCMAPTable();
+
+  // OS/2 and Windows metrics table.
+  // *  https://docs.microsoft.com/en-us/typography/opentype/spec/os2
+  GEMINI_ASSERT(tables_.find("OS/2") != tables_.end(), "missing required table \"OS/2\"");
+
+  // Postscript information table.
+  // *  https://docs.microsoft.com/en-us/typography/opentype/spec/post
+  GEMINI_ASSERT(tables_.find("post") != tables_.end(), "missing required table \"post\"");
+  readPOSTTable();
+
+  // ============================================================================================================
+  // Other tables.
+  // ============================================================================================================
+
+  // Depends on the maxp table.
+  // GEMINI_ASSERT(tables_.find("loca") != tables_.end(), "missing required table \"loca\"");
+  if (tables_.find("loca") != tables_.end()) {
+    readLOCATable();
+  }
+
+  // Glyph data.
+  if (tables_.find("glyf") != tables_.end()) {
+    readGLYFTable();
+  }
 
   // Font Program
   // readFPGMTable();
@@ -132,10 +164,10 @@ void TrueType::ReadTTF(const std::string &filename) {
 
 std::vector<uint16> TrueType::GetAllDefinedCharacters() const {
   std::vector<uint16> output;
-  output.reserve(cmap_table_.glyph_index_map.size());
-  for (auto& [c, _] : cmap_table_.glyph_index_map) {
-    output.push_back(c);
-  }
+//  output.reserve(cmap_table_.glyph_index_map.size());
+//  for (auto& [c, _] : cmap_table_.glyph_index_map) {
+//    output.push_back(c);
+//  }
   return output;
 }
 
@@ -178,6 +210,7 @@ uint32 TrueType::calcCheckSum(uint32 offset, uint32 length) {
 }
 
 void TrueType::readHeadTable() {
+  // https://docs.microsoft.com/en-us/typography/opentype/spec/head
   seek(tables_.at("head").offset);
 
   head_table_.version = read<Fixed>();
@@ -187,12 +220,24 @@ void TrueType::readHeadTable() {
   GEMINI_ASSERT(head_table_.magic_number == 0x5f0f3cf5, "magic number is incorrect");
   head_table_.flags = read<uint16>();
   head_table_.units_per_em = read<uint16>();
+  // Time indicated in "Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone."
   head_table_.created = read<LONGDATETIME>();
   head_table_.modified = read<LONGDATETIME>();
   head_table_.xmin = read<FWORD>();
   head_table_.ymin = read<FWORD>();
   head_table_.xmax = read<FWORD>();
   head_table_.ymax = read<FWORD>();
+
+  /* Mac style flags:
+    Bit 0: Bold (if set to 1);
+    Bit 1: Italic (if set to 1)
+    Bit 2: Underline (if set to 1)
+    Bit 3: Outline (if set to 1)
+    Bit 4: Shadow (if set to 1)
+    Bit 5: Condensed (if set to 1)
+    Bit 6: Extended (if set to 1)
+    Bits 7–15: Reserved (set to 0).
+   */
   head_table_.mac_style = read<uint16>();
   head_table_.lowest_rec_PPEM = read<uint16>();
   head_table_.font_direction_hint = read<int16>();
@@ -200,7 +245,6 @@ void TrueType::readHeadTable() {
   head_table_.glyph_data_format = read<int16>();
 }
 
-//! \brief Read the MAXP table.
 void TrueType::readMAXPTable() {
   seek(tables_.at("maxp").offset);
 
@@ -236,9 +280,10 @@ void TrueType::readHHEATable() {
   hhea_table_.care_slope_run = read<int16>();
   hhea_table_.caret_offset = read<FWORD>();
 
-  // Skip the four reserved places.
+  // Skip the four reserved places, which must be zero.
   for (int i = 0; i < 4; ++i) {
-    read<int16>();
+    auto x = read<int16>();
+    GEMINI_ASSERT(x == 0, "reserved word must be zero");
   }
 
   hhea_table_.metric_data_format = read<int16>();
@@ -256,6 +301,38 @@ void TrueType::readHMTXTable() {
   for (int i = 0; i < maxp_table_.num_glyphs - hhea_table_.num_of_long_hor_metrics; ++i) {
     hmtx_table_.left_side_bearings.push_back(read<int16>());
   }
+}
+
+void TrueType::readNAMETable() {
+  seek(tables_.at("name").offset);
+
+  // TODO: Finish this.
+
+  name_table_.version = read<uint16>();
+  name_table_.count = read<uint16>();
+  name_table_.storage_offset = read<Offset16>();
+
+  // Get name record.
+
+  if (name_table_.version == 1) {
+    name_table_.lang_tag_count = read<uint16>();
+    // Get lang tag record.
+  }
+}
+
+void TrueType::readPOSTTable() {
+  seek(tables_.at("post").offset);
+
+  // Read header
+  fill(post_table_.version);
+  fill(post_table_.italic_angle);
+  fill(post_table_.underline_position);
+  fill(post_table_.underline_thickness);
+  fill(post_table_.is_fixed_pitch);
+  fill(post_table_.min_mem_type_42);
+  fill(post_table_.max_mem_type_42);
+  fill(post_table_.min_mem_type_1);
+  fill(post_table_.max_mem_type_1);
 }
 
 void TrueType::readLOCATable() {
@@ -422,27 +499,36 @@ void TrueType::readCMAPTable() {
 
   // TODO: Support more formats?
 
-  int64_t selected_offset = -1;
+  // Platform IDs
+  // 0 - Unicode
+  // 1 - Maintosh
+  // 2 - ISO (deprecated)
+  // 3 - Windows
+  // 4 - Custom.
+
+  auto base_offset = tables_.at("cmap").offset;
   for (auto& [platform_id, encoding_id, offset] : cmap_table_.encoding_records) {
+
     bool is_windows = platform_id == 3 && (encoding_id == 0 || encoding_id == 1 || encoding_id == 10);
     bool is_unicode = platform_id == 0 && (0 <= encoding_id && encoding_id < 5);
 
-    if (is_windows || is_unicode) {
-      selected_offset = tables_.at("cmap").offset + offset;
-      break;
-    }
-  }
-  // Make sure we found an offset.
-  GEMINI_ASSERT(selected_offset != -1, "did not find a recognized platform and encoding");
+    // Read the version.
+    seek(base_offset + offset);
+    cmap_table_.format = read<uint16>();
 
-  // There are seven possible formats.
-  cmap_table_.format = read<uint16>();
-  switch (cmap_table_.format) { // Read different formats.
-    case 4:
-      cmap_table_.glyph_index_map = parseFormat4().glyph_index_map;
-      break;
-    default:
-      GEMINI_FAIL("unsupported format: " << cmap_table_.format);
+    // There are seven possible formats.
+    cmap_table_.glyph_index_map.emplace_back();
+    switch (cmap_table_.format) {
+      case 4:
+        cmap_table_.glyph_index_map.back() = parseFormat4().glyph_index_map;
+        break;
+      case 14:
+        parseFormat14();
+        break;
+      default:
+        ;
+        //GEMINI_FAIL("unsupported CMAP table format: " << cmap_table_.format);
+    }
   }
 }
 
@@ -533,4 +619,89 @@ TrueType::Format4Data TrueType::parseFormat4() {
   }
 
   return format;
+}
+
+
+
+struct UnicodeRange {
+  //! \brief First unicode value in this range.
+  uint32 start_unicode_value{}; // uint24
+  //! \brief Number of additional values in this range.
+  uint8 additional_count{};
+};
+
+struct DefaultUVSTable {
+  std::vector<UnicodeRange> ranges;
+};
+
+struct UVSMappingRecord {
+  uint32 unicode_value{}; // uint24
+  uint16 glyph_id{};
+};
+
+//! \brief A list of pairs of unicode scalar values and glyph ids.
+struct NonDefaultUVSTable {
+  std::vector<UVSMappingRecord> uvs_mappings;
+};
+
+struct VariationSelector {
+  uint32 var_selector; // uint24
+  //! \brief Offset from the start of the format 14 subtable to Default UVS Table. May be 0.
+  Offset32 default_uvs_offset;
+  //! \brief Offset from the start of the format 14 subtable to Non-Default UVS Table. May be 0.
+  Offset32 non_default_uvs_offset;
+
+  DefaultUVSTable default_uvs_table;
+
+  NonDefaultUVSTable non_default_uvs_table;
+};
+
+struct Format14Data {
+  uint32 length{};
+
+  //! "The Variation Selector Records are sorted in increasing order of varSelector. No two records may have the same varSelector."
+  std::vector<VariationSelector> var_selectors;
+};
+
+void TrueType::parseFormat14() {
+  // Mark the start of the format 14 subtable. Note - the version of the table has already been parsed.
+  auto start_ptr = file_ptr_ - 2;
+
+  Format14Data format;
+
+  fill(format.length);
+  auto num_var_selector_records = read<uint32>();
+
+  for (uint32 i = 0; i < num_var_selector_records; ++i) {
+    // Parse the variation selector
+    VariationSelector variation_selector{};
+    read<1, uint32>(variation_selector.var_selector);  // uint24
+    fill(variation_selector.default_uvs_offset);
+    fill(variation_selector.non_default_uvs_offset);
+
+    format.var_selectors.push_back(variation_selector);
+  }
+
+  // Parse the tables.
+  for (auto& variation_selector : format.var_selectors) {
+    // Default UVS table.
+    seek(start_ptr + variation_selector.default_uvs_offset);
+    auto num_unicode_value_ranges = read<uint32>();
+    for (uint32 i = 0; i < num_unicode_value_ranges; ++i) {
+      variation_selector.default_uvs_table.ranges.emplace_back();
+      auto& entry = variation_selector.default_uvs_table.ranges.back();
+      read<1, uint32>(entry.start_unicode_value); // uint24
+      fill(entry.additional_count);
+    }
+
+    // Non-default UVS table.
+    seek(start_ptr + variation_selector.non_default_uvs_offset);
+    auto num_uvs_mappings = read<uint32>();
+    for (uint32 i = 0; i < num_uvs_mappings; ++i) {
+      variation_selector.non_default_uvs_table.uvs_mappings.emplace_back();
+      auto& entry = variation_selector.non_default_uvs_table.uvs_mappings.back();
+      read<1, uint32>(entry.unicode_value); // uint24
+      fill(entry.glyph_id);
+    }
+  }
 }

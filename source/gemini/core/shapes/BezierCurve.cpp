@@ -6,7 +6,8 @@
 #include <map>
 
 using namespace gemini;
-using namespace gemini::shapes;
+using namespace gemini::core;
+using namespace gemini::core::shapes;
 
 NO_DISCARD BezierCurve BezierCurve::Copy() const {
   return BezierCurve{ contour_ends, points };
@@ -73,11 +74,11 @@ BezierCurve& BezierCurve::ShiftScaled(double factor, double dx, double dy) {
   return *this;
 }
 
-namespace gemini::shapes {
+namespace gemini::core::shapes {
 
 void RasterBezierCurve(const BezierCurve& spline,
                        Bitmap& bmp,
-                       gemini::color::PixelColor color,
+                       color::PixelColor color,
                        double z,
                        bool color_by_spline) {
   using Direction = bool;

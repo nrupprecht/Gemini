@@ -5,6 +5,7 @@
 #include "gemini/text/TextBox.h"
 
 using namespace gemini;
+using namespace gemini::core;
 using namespace gemini::text;
 
 

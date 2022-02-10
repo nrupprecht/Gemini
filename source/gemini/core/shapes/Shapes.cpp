@@ -7,6 +7,7 @@
 #include "gemini/core/Canvas.h"
 
 using namespace gemini;
+using namespace gemini::core;
 
 void Shape::write(Bitmap& bitmap, int x, int y, color::PixelColor color) const {
   bitmap.SetPixel(x, y, color, zorder_);

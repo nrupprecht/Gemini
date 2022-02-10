@@ -4,8 +4,8 @@
 
 #include "gemini/core/Bitmap.h"
 
-using namespace gemini;
-using namespace gemini::color;
+using namespace gemini::core;
+using namespace gemini::core::color;
 
 
 namespace {
@@ -23,7 +23,7 @@ GEMINI_EXPORT PixelColor color::RandomUniformColor() {
   };
 }
 
-PixelColor gemini::color::Interpolate(const PixelColor &base, const PixelColor &other, double mult) {
+PixelColor gemini::core::color::Interpolate(const PixelColor &base, const PixelColor &other, double mult) {
   return (1. - mult) * base + mult * other;
 }
 

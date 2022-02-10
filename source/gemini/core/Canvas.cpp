@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 
 using namespace gemini;
+using namespace gemini::core;
 using Eigen::MatrixXd;
 
 Image::Image()
@@ -63,6 +64,14 @@ const CanvasLocation &Image::GetLocation(const class Canvas *canvas) const {
   GEMINI_FAIL("could not find specified canvas in the image");
 }
 
+int Image::GetWidth() const {
+  return width_;
+}
+
+int Image::GetHeight() const {
+  return height_;
+}
+
 Bitmap Image::ToBitmap() const {
   Bitmap output(width_, height_);
 
@@ -74,23 +83,16 @@ Bitmap Image::ToBitmap() const {
 }
 
 void Image::CalculateImage() const {
-  // Determine the actual size and placement of all canvases.
-  calculateCanvasLocations();
   // Determine which canvases need coordinate systems.
-  calculateCanvasCoordinates();
+  CalculateCanvasCoordinates();
+
+  // Determine the actual size and placement of all canvases.
+  CalculateCanvasLocations();
 
   needs_calculate_ = false;
 }
 
-void Image::registerCanvas(class Canvas *canvas) {
-  // Register this canvas in the vector.
-  canvases_.push_back(canvas);
-  // Create entries for the canvas.
-  canvas_locations_[canvas];
-  canvas_coordinate_description_[canvas];
-}
-
-void Image::calculateCanvasLocations() const {
+void Image::CalculateCanvasLocations() const {
   // Master canvas always takes up all the image space.
   canvas_locations_[master_canvas_] = {0, 0, width_, height_};
 
@@ -102,8 +104,10 @@ void Image::calculateCanvasLocations() const {
   }
 
   // Represents the left, bottom, right, top (in that order) of each canvas (except the master canvas).
-  MatrixXd relationships(canvas_fixes_.size(), 4 * (static_cast<int>(canvases_.size()) - 1));
-  MatrixXd constants(canvas_fixes_.size(), 1);
+  MatrixXd relationships = MatrixXd::Zero(
+      static_cast<int>(canvas_fixes_.size()),
+      4 * (static_cast<int>(canvases_.size()) - 1));
+  MatrixXd constants = MatrixXd::Zero(static_cast<int>(canvas_fixes_.size()), 1);
 
   // Defines how to add entries in the relationship matrix for each given relationship.
   auto set_entry = [&constants, &relationships, this](int c, auto cpart, bool is_first, int count) {
@@ -185,7 +189,7 @@ void Image::calculateCanvasLocations() const {
   }
 }
 
-void Image::calculateCanvasCoordinates() const {
+void Image::CalculateCanvasCoordinates() const {
   // Check which, if any, canvases need coordinate systems. If so, determine what they should be.
   for (const auto &canvas: canvases_) {
     // Get coordinates, if there are any. A lack of coordinates is signaled by quiet NaN.
@@ -193,6 +197,21 @@ void Image::calculateCanvasCoordinates() const {
     // Determine the coordinate system that should be used for the canvas.
     describeCoordinates(canvas, min_max_coords);
   }
+}
+
+const CoordinateDescription& Image::GetCanvasCoordinateDescription(Canvas* canvas) const {
+  if (auto it = canvas_coordinate_description_.find(canvas); it != canvas_coordinate_description_.end()) {
+    return it->second;
+  }
+  GEMINI_FAIL("the canvas was not a member of this image");
+}
+
+void Image::registerCanvas(class Canvas *canvas) {
+  // Register this canvas in the vector.
+  canvases_.push_back(canvas);
+  // Create entries for the canvas.
+  canvas_locations_[canvas];
+  canvas_coordinate_description_[canvas];
 }
 
 std::array<double, 4> Image::getMinMaxCoordinates(class Canvas *canvas) {
@@ -218,11 +237,11 @@ std::array<double, 4> Image::getMinMaxCoordinates(class Canvas *canvas) {
     }
   }
 
-  return {min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y};
+  return { min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y };
 }
 
 void Image::describeCoordinates(Canvas *canvas, const std::array<double, 4> &min_max_coords) const {
-  auto[min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y] = min_max_coords;
+  auto [min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y] = min_max_coords;
 
   // Check whether there were any coordinates in either x or y.
   if (!std::isnan(min_coordinate_x) || !std::isnan(min_coordinate_y)) {
@@ -368,6 +387,12 @@ Displacement Canvas::DisplacementToPixels(const Displacement &displacement) cons
   // A displacement is the same as a point measured from the origin.
   Point point{displacement.dx, displacement.dy, displacement.type_dx, displacement.type_dy};
   auto pixel_point = PointToPixels(point);
+
+  // Sometimes have to remove image shift.
+  auto &location = image_->canvas_locations_.find(this)->second;
+  pixel_point.x -= displacement.type_dx == LocationType::Proportional ? location.left : 0;
+  pixel_point.y -= displacement.type_dy == LocationType::Proportional ? location.bottom : 0;
+
   Displacement pixelsDisplacement{pixel_point.x, pixel_point.y, LocationType::Pixels, LocationType::Pixels};
   return pixelsDisplacement;
 }

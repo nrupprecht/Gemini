@@ -7,7 +7,7 @@
 
 #include "gemini/core/shapes/Shapes.h"
 
-namespace gemini::shapes {
+namespace gemini::core::shapes {
 
 struct GeometricPoint {
   double x{}, y{};
@@ -53,7 +53,7 @@ struct GEMINI_EXPORT BezierCurve {
 
 void GEMINI_EXPORT RasterBezierCurve(const shapes::BezierCurve& spline,
                                      Bitmap& bmp,
-                                     gemini::color::PixelColor color,
+                                     color::PixelColor color,
                                      double z = 0.,
                                      bool color_by_spline = false);
 
