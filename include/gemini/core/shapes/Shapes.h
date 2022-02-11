@@ -6,7 +6,8 @@
 #define GEMINI_INCLUDE_GEMINI_SHAPES_H_
 
 #include "gemini/core/Bitmap.h"
-#include "gemini/core/Positionable.h"
+#include "gemini/core/Location.h"
+
 
 namespace gemini::core {
 

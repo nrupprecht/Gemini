@@ -2,6 +2,7 @@
 // Created by Nathaniel Rupprecht on 11/26/21.
 //
 
+#include <gemini/core/Location.h>
 #include "gemini/plot/Plot.h"
 // Other files.
 #include "gemini/text/TextBox.h"
@@ -248,10 +249,14 @@ void Figure::ToFile(const std::string& filepath) {
 
       plotting_canvas_->AddShape(
           std::make_shared<gemini::core::Ray>(
-              Point{coord, 0, LocationType::Coordinate, LocationType::Proportional},
+              gemini::Point{coord, 0, LocationType::Coordinate, LocationType::Proportional},
               Displacement{0, tick_length, LocationType::Pixels, LocationType::Pixels},
               color::Black,
               2));
+
+//      plotting_canvas_->AddShape(
+//          std::make_shared<text::TextBox>());
+
       coord += dtick;
     }
   }
@@ -274,7 +279,7 @@ void Figure::ToFile(const std::string& filepath) {
 
       plotting_canvas_->AddShape(
           std::make_shared<gemini::core::Ray>(
-              Point{0, coord, LocationType::Proportional, LocationType::Coordinate},
+              gemini::Point{0, coord, LocationType::Proportional, LocationType::Coordinate},
               Displacement{tick_length, 0., LocationType::Pixels, LocationType::Pixels},
               color::Black,
               2));

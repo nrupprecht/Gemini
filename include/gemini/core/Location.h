@@ -5,6 +5,8 @@
 #ifndef GEMINI_INCLUDE_GEMINI_CORE_LOCATION_H_
 #define GEMINI_INCLUDE_GEMINI_CORE_LOCATION_H_
 
+#include <gemini/export.hpp>
+
 namespace gemini {
 
 enum class GEMINI_EXPORT LocationType {
