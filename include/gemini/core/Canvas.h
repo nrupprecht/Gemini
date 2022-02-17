@@ -14,7 +14,6 @@
 
 namespace gemini::core {
 
-
 struct GEMINI_EXPORT CanvasLocation {
   int left{}, bottom{}, right{}, top{};
 };
@@ -38,12 +37,11 @@ enum class GEMINI_EXPORT CanvasPart {
 //! \brief Represents a relationship between two canvases.
 struct FixRelationship {
   FixRelationship(int c1_num, int c2_num, CanvasPart c1_part, CanvasPart c2_part, double px_diff)
-  : canvas1_num(c1_num)
-  , canvas2_num(c2_num)
-  , canvas1_part(c1_part)
-  , canvas2_part(c2_part)
-  , pixels_diff(px_diff)
-  {}
+      : canvas1_num(c1_num)
+      , canvas2_num(c2_num)
+      , canvas1_part(c1_part)
+      , canvas2_part(c2_part)
+      , pixels_diff(px_diff) {}
 
   int canvas1_num, canvas2_num;
   CanvasPart canvas1_part, canvas2_part;
@@ -56,6 +54,7 @@ class Canvas;
 //! \brief The image class collects infomation on sets of canvases and subcanvases.
 class GEMINI_EXPORT Image {
   friend class Canvas;
+
  public:
   //! \brief Create an image.
   Image();
@@ -76,17 +75,19 @@ class GEMINI_EXPORT Image {
   //! \param pixels_diff The pixel adjustment in the relationship.
   //!
   //! TODO(Nate): Eventually, I want to make this more general, e.g. non-absolute pixel differences, relationships
-  void Relation_Fix(int canvas1_num,
-                    CanvasPart canvas1_part,
-                    int canvas2_num,
-                    CanvasPart canvas2_part,
-                    double pixels_diff = 0.);
+  void Relation_Fix(
+      int canvas1_num,
+      CanvasPart canvas1_part,
+      int canvas2_num,
+      CanvasPart canvas2_part,
+      double pixels_diff = 0.);
 
-  void Relation_Fix(Canvas* canvas1,
-                    CanvasPart canvas1_part,
-                    Canvas* canvas2,
-                    CanvasPart canvas2_part,
-                    double pixels_diff = 0.);
+  void Relation_Fix(
+      Canvas* canvas1,
+      CanvasPart canvas1_part,
+      Canvas* canvas2,
+      CanvasPart canvas2_part,
+      double pixels_diff = 0.);
 
   //! \brief Clear all relationships.
   void ClearRelationships();
@@ -165,9 +166,9 @@ class GEMINI_EXPORT Image {
   mutable int width_ = 100, height_ = 100;
 };
 
-
 class GEMINI_EXPORT Canvas {
   friend class Image;
+
  public:
   //! \brief Get a floating subcanvas of this canvas.
   Canvas* FloatingSubCanvas();
@@ -190,23 +191,21 @@ class GEMINI_EXPORT Canvas {
 
   NO_DISCARD const color::PixelColor& GetBackgroundColor() const;
 
-  NO_DISCARD Point PointToPixels(const Point& point) const;
+  NO_DISCARD Point PointToPixels(const Point& point, bool relative_to_canvas = false) const;
   NO_DISCARD Displacement DisplacementToPixels(const Displacement& displacement) const;
 
  protected:
   //! \brief Construct a canvas as a child of another canvas.
   explicit Canvas(Canvas* parent)
-    : parent_(parent)
-    , image_(parent == nullptr ? nullptr : parent->image_)
-  {}
+      : parent_(parent)
+      , image_(parent == nullptr ? nullptr : parent->image_) {}
 
   //! \brief Construct a canvas as a direct child of an image.
   //!
   //! \param image The image that will the the parent of this canvas.
   explicit Canvas(Image* image)
-    : parent_(nullptr)
-    , image_(image)
-  {}
+      : parent_(nullptr)
+      , image_(image) {}
 
   //! \brief True if this is the top level canvas.
   NO_DISCARD bool isTopLevelCanvas() const;
@@ -232,7 +231,7 @@ class GEMINI_EXPORT Canvas {
   std::vector<std::shared_ptr<Shape>> shapes_;
 
   //! \brief The parent canvas for this canvas. Null if this is the top level canvas.
-  Canvas *parent_ = nullptr;
+  Canvas* parent_ = nullptr;
 
   std::vector<Canvas*> child_canvases_;
 
@@ -242,7 +241,6 @@ class GEMINI_EXPORT Canvas {
   //! \brief The image that this canvas belongs to.
   Image* image_;
 };
-
 
 }
 

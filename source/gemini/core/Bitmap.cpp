@@ -7,7 +7,6 @@
 using namespace gemini::core;
 using namespace gemini::core::color;
 
-
 namespace {
 
 std::uniform_int_distribution<unsigned char> color_distribution;
@@ -23,7 +22,7 @@ GEMINI_EXPORT PixelColor color::RandomUniformColor() {
   };
 }
 
-PixelColor gemini::core::color::Interpolate(const PixelColor &base, const PixelColor &other, double mult) {
+PixelColor gemini::core::color::Interpolate(const PixelColor& base, const PixelColor& other, double mult) {
   return (1. - mult) * base + mult * other;
 }
 
@@ -40,7 +39,7 @@ void Bitmap::SetSize(int width, int height) {
   impl_->SetSize(width, height);
 }
 
-void Bitmap::SetPixel(int x, int y, const color::PixelColor &color, double z) {
+void Bitmap::SetPixel(int x, int y, const color::PixelColor& color, double z) {
   impl_->SetPixel(x, y, color, z);
 }
 
@@ -48,12 +47,16 @@ NO_DISCARD color::PixelColor Bitmap::GetPixel(int x, int y) const {
   return impl_->GetPixel(x, y);
 }
 
-void Bitmap::ToFile(const std::string &filepath) const {
+void Bitmap::ToFile(const std::string& filepath) const {
   return impl_->ToFile(filepath);
 }
 
 void Bitmap::SetPermittedRegion(int xlow, int xhi, int ylow, int yhi) {
   impl_->SetPermittedRegion(xlow, xhi, ylow, yhi);
+}
+
+void Bitmap::SetRestrictRegion(bool r) {
+  impl_->SetRestrictRegion(r);
 }
 
 unsigned int Bitmap::GetHeight() const {
@@ -64,8 +67,13 @@ unsigned int Bitmap::GetWidth() const {
   return impl_->GetWidth();
 }
 
-void Bitmap::Impl::SetPixel(int x, int y, const color::PixelColor &color, double z) {
-  if (pxlow_ <= x && x < pxhi_ && pylow_ <= y && y < pyhi_) {
+void Bitmap::Impl::SetPixel(int x, int y, const color::PixelColor& color, double z) {
+  if (!restrict_region_) {
+    if (0 <= x && x < width_ && 0 <= y && y < height_) {
+      setPixel(x, y, color, z);
+    }
+  }
+  else if (pxlow_ <= x && x < pxhi_ && pylow_ <= y && y < pyhi_) {
     setPixel(x, y, color, z);
   }
 }
@@ -76,7 +84,11 @@ void Bitmap::Impl::SetSize(int width, int height) {
 }
 
 void Bitmap::Impl::SetPermittedRegion(int xlow, int xhi, int ylow, int yhi) {
-  pxlow_ = std::max(0, xlow), pxhi_ = std::min(width_, xhi), pylow_ = std::min(0, ylow), pyhi_ = std::min(height_, yhi);
+  pxlow_ = std::max(0, xlow), pxhi_ = std::min(width_, xhi), pylow_ = std::max(0, ylow), pyhi_ = std::min(height_, yhi);
+}
+
+void Bitmap::Impl::SetRestrictRegion(bool r) {
+  restrict_region_ = r;
 }
 
 void EasyBMPImpl::setSize(int width, int height) {
@@ -96,11 +108,11 @@ color::PixelColor EasyBMPImpl::GetPixel(int x, int y) const {
   return color::Black;
 }
 
-void EasyBMPImpl::ToFile(const std::string &filepath) {
+void EasyBMPImpl::ToFile(const std::string& filepath) {
   bitmap_.WriteToFile(filepath.c_str());
 }
 
-void EasyBMPImpl::setPixel(int x, int y, const color::PixelColor &color, double z) {
+void EasyBMPImpl::setPixel(int x, int y, const color::PixelColor& color, double z) {
   // Look up the current z-value.
   auto& zvalue = zarray_[y * width_ + x];
   if (std::isnan(zvalue) || zvalue < z || (zvalue == z && overwrite_type_ == ZOverwriteType::GreaterOrEqual)) {

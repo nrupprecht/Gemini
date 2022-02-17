@@ -6,6 +6,7 @@
 #define GEMINI_INCLUDE_GEMINI_CORE_LOCATION_H_
 
 #include <gemini/export.hpp>
+#include <numeric>
 
 namespace gemini {
 
@@ -14,8 +15,10 @@ enum class GEMINI_EXPORT LocationType {
 };
 
 struct GEMINI_EXPORT Point {
-  double x, y;
-  LocationType type_x, type_y;
+  double x = std::numeric_limits<double>::quiet_NaN();
+  double y = std::numeric_limits<double>::quiet_NaN();
+  LocationType type_x = LocationType::Pixels;
+  LocationType type_y = LocationType::Pixels;
 };
 
 inline GEMINI_EXPORT Point MakeCoordinatePoint(double x, double y) {

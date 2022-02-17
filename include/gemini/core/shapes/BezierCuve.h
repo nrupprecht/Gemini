@@ -9,16 +9,11 @@
 
 namespace gemini::core::shapes {
 
-struct GeometricPoint {
-  double x{}, y{};
-};
 
-// TODO: Move to somewhere more general.
 struct GEMINI_EXPORT BezierPoint : public GeometricPoint {
   bool is_on_curve = false;
 };
 
-// TODO: Move to somewhere more general.
 struct GEMINI_EXPORT BezierCurve {
   // ============================================================================
   //  Member data.
@@ -60,11 +55,11 @@ void GEMINI_EXPORT RasterBezierCurve(const shapes::BezierCurve& spline,
 
 class GEMINI_EXPORT QuadraticBezierCurve : public Shape {
  public:
-  void DrawOnBitmap(Bitmap &bitmap, const Canvas *canvas) const override;
-
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
 
  private:
+  void drawOnBitmap(Bitmap &bitmap, const Canvas *canvas) const override;
+
   shapes::BezierCurve spline_;
 
   color::PixelColor color_;

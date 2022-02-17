@@ -28,23 +28,27 @@ Image::~Image() {
   }
 }
 
-void Image::Relation_Fix(int canvas1_num,
-                         CanvasPart canvas1_part,
-                         int canvas2_num,
-                         CanvasPart canvas2_part,
-                         double pixels_diff) {
+void Image::Relation_Fix(
+    int canvas1_num,
+    CanvasPart canvas1_part,
+    int canvas2_num,
+    CanvasPart canvas2_part,
+    double pixels_diff) {
   canvas_fixes_.emplace_back(canvas1_num, canvas2_num, canvas1_part, canvas2_part, pixels_diff);
 }
 
-void Image::Relation_Fix(Canvas* canvas1,
-                         CanvasPart canvas1_part,
-                         Canvas* canvas2,
-                         CanvasPart canvas2_part,
-                         double pixels_diff) {
+void Image::Relation_Fix(
+    Canvas* canvas1,
+    CanvasPart canvas1_part,
+    Canvas* canvas2,
+    CanvasPart canvas2_part,
+    double pixels_diff) {
   auto it1 = std::find(canvases_.begin(), canvases_.end(), canvas1);
   auto it2 = std::find(canvases_.begin(), canvases_.end(), canvas2);
-  GEMINI_REQUIRE(it1 != canvases_.end(), "could not find first canvas");
-  GEMINI_REQUIRE(it2 != canvases_.end(), "could not find second canvas");
+  GEMINI_REQUIRE(it1 != canvases_.end(), "could not find first canvas") {
+  }
+  GEMINI_REQUIRE(it2 != canvases_.end(), "could not find second canvas") {
+  }
   auto index1 = std::distance(canvases_.begin(), it1), index2 = std::distance(canvases_.begin(), it2);
   Relation_Fix(static_cast<int>(index1), canvas1_part, static_cast<int>(index2), canvas2_part, pixels_diff);
 }
@@ -53,15 +57,16 @@ void Image::ClearRelationships() {
   canvas_fixes_.clear();
 }
 
-Canvas *Image::GetMasterCanvas() {
+Canvas* Image::GetMasterCanvas() {
   return master_canvas_;
 }
 
-const CanvasLocation &Image::GetLocation(const class Canvas *canvas) const {
+const CanvasLocation& Image::GetLocation(const class Canvas* canvas) const {
   if (auto it = canvas_locations_.find(canvas); it != canvas_locations_.end()) {
     return it->second;
   }
-  GEMINI_FAIL("could not find specified canvas in the image");
+  GEMINI_FAIL("could not find specified canvas in the image") {
+  }
 }
 
 int Image::GetWidth() const {
@@ -101,6 +106,7 @@ void Image::CalculateCanvasLocations() const {
       return;
     }
     GEMINI_FAIL("no relationships, but there are multiple canvases");
+
   }
 
   // Represents the left, bottom, right, top (in that order) of each canvas (except the master canvas).
@@ -116,35 +122,40 @@ void Image::CalculateCanvasLocations() const {
       case CanvasPart::Left:
         if (c == 0) {
           constants(count, 0) -= 0.; // For consistency.
-        } else {
+        }
+        else {
           relationships(count, 4 * (c - 1) + 0) = mult;
         }
         break;
       case CanvasPart::Bottom:
         if (c == 0) {
           constants(count, 0) -= 0.; // For consistency.
-        } else {
+        }
+        else {
           relationships(count, 4 * (c - 1) + 1) = mult;
         }
         break;
       case CanvasPart::Right:
         if (c == 0) {
           constants(count, 0) -= mult * width_;
-        } else {
+        }
+        else {
           relationships(count, 4 * (c - 1) + 2) = mult;
         }
         break;
       case CanvasPart::Top:
         if (c == 0) {
           constants(count, 0) -= mult * height_;
-        } else {
+        }
+        else {
           relationships(count, 4 * (c - 1) + 3) = mult;
         }
         break;
       case CanvasPart::CenterX:
         if (c == 0) {
           constants(count, 0) -= 0.5 * mult * width_;
-        } else {
+        }
+        else {
           relationships(count, 4 * (c - 1) + 2) = 0.5 * mult;
           relationships(count, 4 * (c - 1) + 0) = 0.5 * mult;
         }
@@ -152,7 +163,8 @@ void Image::CalculateCanvasLocations() const {
       case CanvasPart::CenterY:
         if (c == 0) {
           constants(count, 0) -= 0.5 * mult * height_;
-        } else {
+        }
+        else {
           relationships(count, 4 * (c - 1) + 3) = 0.5 * mult;
           relationships(count, 4 * (c - 1) + 1) = 0.5 * mult;
         }
@@ -173,8 +185,9 @@ void Image::CalculateCanvasLocations() const {
   try {
     canvas_positions = relationships.fullPivLu().solve(constants);
   }
-  catch (const std::exception &ex) {
-    GEMINI_FAIL("could not determine canvas location: " << ex.what());
+  catch (const std::exception& ex) {
+    GEMINI_FAIL("could not determine canvas location: " << ex.what()) {
+    }
   }
 
   for (int i = 0; i < canvas_positions.rows() / 4; ++i) {
@@ -191,7 +204,7 @@ void Image::CalculateCanvasLocations() const {
 
 void Image::CalculateCanvasCoordinates() const {
   // Check which, if any, canvases need coordinate systems. If so, determine what they should be.
-  for (const auto &canvas: canvases_) {
+  for (const auto& canvas: canvases_) {
     // Get coordinates, if there are any. A lack of coordinates is signaled by quiet NaN.
     auto min_max_coords = getMinMaxCoordinates(canvas);
     // Determine the coordinate system that should be used for the canvas.
@@ -203,10 +216,11 @@ const CoordinateDescription& Image::GetCanvasCoordinateDescription(Canvas* canva
   if (auto it = canvas_coordinate_description_.find(canvas); it != canvas_coordinate_description_.end()) {
     return it->second;
   }
-  GEMINI_FAIL("the canvas was not a member of this image");
+  GEMINI_FAIL("the canvas was not a member of this image") {
+  }
 }
 
-void Image::registerCanvas(class Canvas *canvas) {
+void Image::registerCanvas(class Canvas* canvas) {
   // Register this canvas in the vector.
   canvases_.push_back(canvas);
   // Create entries for the canvas.
@@ -214,13 +228,13 @@ void Image::registerCanvas(class Canvas *canvas) {
   canvas_coordinate_description_[canvas];
 }
 
-std::array<double, 4> Image::getMinMaxCoordinates(class Canvas *canvas) {
+std::array<double, 4> Image::getMinMaxCoordinates(class Canvas* canvas) {
   // Check if any object uses coordinates.
   double min_coordinate_x = std::numeric_limits<double>::quiet_NaN();
   double max_coordinate_x = std::numeric_limits<double>::quiet_NaN();
   double min_coordinate_y = std::numeric_limits<double>::quiet_NaN();
   double max_coordinate_y = std::numeric_limits<double>::quiet_NaN();
-  for (const auto &shape: canvas->shapes_) {
+  for (const auto& shape: canvas->shapes_) {
     auto[min_x, max_x, min_y, max_y] = shape->GetBoundingBox();
 
     if (!std::isnan(min_x) && (std::isnan(min_coordinate_x) || min_x < min_coordinate_x)) {
@@ -237,15 +251,15 @@ std::array<double, 4> Image::getMinMaxCoordinates(class Canvas *canvas) {
     }
   }
 
-  return { min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y };
+  return {min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y};
 }
 
-void Image::describeCoordinates(Canvas *canvas, const std::array<double, 4> &min_max_coords) const {
-  auto [min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y] = min_max_coords;
+void Image::describeCoordinates(Canvas* canvas, const std::array<double, 4>& min_max_coords) const {
+  auto[min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y] = min_max_coords;
 
   // Check whether there were any coordinates in either x or y.
   if (!std::isnan(min_coordinate_x) || !std::isnan(min_coordinate_y)) {
-    auto &description = canvas_coordinate_description_[canvas];
+    auto& description = canvas_coordinate_description_[canvas];
     description.has_coordinates = true;
 
     // If a coordinate system has been specified, use that. Otherwise, use minimum coordinate point.
@@ -253,12 +267,15 @@ void Image::describeCoordinates(Canvas *canvas, const std::array<double, 4> &min
     // Left coordinate.
     if (!std::isnan(canvas->coordinate_system_.left)) {
       description.left = canvas->coordinate_system_.left;
-    } else {
+    }
+    else {
       if (std::isnan(min_coordinate_x)) {
         description.left = -default_coordinate_epsilon;
-      } else if (min_coordinate_x == max_coordinate_x) {
+      }
+      else if (min_coordinate_x == max_coordinate_x) {
         description.left = min_coordinate_x - default_coordinate_epsilon;
-      } else {
+      }
+      else {
         description.left = min_coordinate_x;
       }
     }
@@ -266,12 +283,15 @@ void Image::describeCoordinates(Canvas *canvas, const std::array<double, 4> &min
     // Right coordinate.
     if (!std::isnan(canvas->coordinate_system_.right)) {
       description.right = canvas->coordinate_system_.right;
-    } else {
+    }
+    else {
       if (std::isnan(min_coordinate_x)) {
         description.right = default_coordinate_epsilon;
-      } else if (min_coordinate_x == max_coordinate_x) {
+      }
+      else if (min_coordinate_x == max_coordinate_x) {
         description.right = min_coordinate_x + default_coordinate_epsilon;
-      } else {
+      }
+      else {
         description.right = max_coordinate_x;
       }
     }
@@ -279,12 +299,15 @@ void Image::describeCoordinates(Canvas *canvas, const std::array<double, 4> &min
     // Bottom coordinate.
     if (!std::isnan(canvas->coordinate_system_.bottom)) {
       description.bottom = canvas->coordinate_system_.bottom;
-    } else {
+    }
+    else {
       if (std::isnan(min_coordinate_y)) {
         description.bottom = -default_coordinate_epsilon;
-      } else if (min_coordinate_y == max_coordinate_y) {
+      }
+      else if (min_coordinate_y == max_coordinate_y) {
         description.bottom = min_coordinate_y - default_coordinate_epsilon;
-      } else {
+      }
+      else {
         description.bottom = min_coordinate_y;
       }
     }
@@ -292,20 +315,23 @@ void Image::describeCoordinates(Canvas *canvas, const std::array<double, 4> &min
     // Top coordinate.
     if (!std::isnan(canvas->coordinate_system_.top)) {
       description.top = canvas->coordinate_system_.top;
-    } else {
+    }
+    else {
       if (std::isnan(min_coordinate_y)) {
         description.top = default_coordinate_epsilon;
-      } else if (min_coordinate_y == max_coordinate_y) {
+      }
+      else if (min_coordinate_y == max_coordinate_y) {
         description.top = min_coordinate_y + default_coordinate_epsilon;
-      } else {
+      }
+      else {
         description.top = max_coordinate_y;
       }
     }
   }
 }
 
-Canvas *Canvas::FloatingSubCanvas() {
-  auto *sub_canvas = new Canvas(this);
+Canvas* Canvas::FloatingSubCanvas() {
+  auto* sub_canvas = new Canvas(this);
   image_->registerCanvas(sub_canvas);
   child_canvases_.push_back(sub_canvas);
 
@@ -325,104 +351,149 @@ void Canvas::SetPaintBackground(bool flag) {
   paint_background_ = flag;
 }
 
-void Canvas::SetCoordinates(const CanvasCoordinates &coordinates) {
+void Canvas::SetCoordinates(const CanvasCoordinates& coordinates) {
   coordinate_system_ = coordinates;
 }
 
-CanvasCoordinates &Canvas::GetCoordinateSystem() {
+CanvasCoordinates& Canvas::GetCoordinateSystem() {
   return coordinate_system_;
 }
 
-const color::PixelColor &Canvas::GetBackgroundColor() const {
+const color::PixelColor& Canvas::GetBackgroundColor() const {
   return background_color_;
 }
 
-Point Canvas::PointToPixels(const Point &point) const {
-  Point pixelPoint{};
-  pixelPoint.type_x = pixelPoint.type_y = LocationType::Pixels;
+Point Canvas::PointToPixels(const Point& point, bool relative_to_canvas) const {
+  Point pixel_point{};
 
-  auto &location = image_->canvas_locations_.find(this)->second;
+  auto& location = image_->canvas_locations_.find(this)->second;
 
   // Handle x coordinate of the point.
   switch (point.type_x) {
     case LocationType::Coordinate: {
-      auto &description = image_->canvas_coordinate_description_.find(this)->second;
+      auto& description = image_->canvas_coordinate_description_.find(this)->second;
       auto proportion_x = (point.x - description.left) / (description.right - description.left);
-      pixelPoint.x = location.left + (location.right - location.left) * proportion_x;
+      pixel_point.x = (location.right - location.left) * proportion_x;
       break;
     }
     case LocationType::Pixels: {
-      pixelPoint.x = point.x; // Already in pixels.
+      pixel_point.x = point.x; // Already in pixels.
       break;
     }
     case LocationType::Proportional: {
-      pixelPoint.x = location.left + (location.right - location.left) * point.x;
+      pixel_point.x = (location.right - location.left) * point.x;
       break;
     }
-    default:GEMINI_FAIL("unrecognized LocationType");
+    default:
+      GEMINI_FAIL("unrecognized LocationType");
   }
 
   // Handle y coordinate of the point.
   switch (point.type_y) {
     case LocationType::Coordinate: {
-      auto &description = image_->canvas_coordinate_description_.find(this)->second;
+      auto& description = image_->canvas_coordinate_description_.find(this)->second;
       auto proportion_y = (point.y - description.bottom) / (description.top - description.bottom);
-      pixelPoint.y = location.bottom + (location.top - location.bottom) * proportion_y;
+      pixel_point.y = (location.top - location.bottom) * proportion_y;
       break;
     }
     case LocationType::Pixels: {
-      pixelPoint.y = point.y; // Already in pixels.
+      pixel_point.y = point.y; // Already in pixels.
       break;
     }
     case LocationType::Proportional: {
-      pixelPoint.y = location.bottom + (location.top - location.bottom) * point.y;
+      pixel_point.y = (location.top - location.bottom) * point.y;
       break;
     }
-    default:GEMINI_FAIL("unrecognized LocationType");
+    default:
+      GEMINI_FAIL("unrecognized LocationType") {
+      }
   }
-  return pixelPoint;
+
+  if (!relative_to_canvas) {
+    pixel_point.x += location.left;
+    pixel_point.y += location.bottom;
+  }
+
+  return pixel_point;
 }
 
-Displacement Canvas::DisplacementToPixels(const Displacement &displacement) const {
-  // A displacement is the same as a point measured from the origin.
-  Point point{displacement.dx, displacement.dy, displacement.type_dx, displacement.type_dy};
-  auto pixel_point = PointToPixels(point);
+Displacement Canvas::DisplacementToPixels(const Displacement& displacement) const {
 
   // Sometimes have to remove image shift.
-  auto &location = image_->canvas_locations_.find(this)->second;
-  pixel_point.x -= displacement.type_dx == LocationType::Proportional ? location.left : 0;
-  pixel_point.y -= displacement.type_dy == LocationType::Proportional ? location.bottom : 0;
+  auto& location = image_->canvas_locations_.find(this)->second;
 
-  Displacement pixelsDisplacement{pixel_point.x, pixel_point.y, LocationType::Pixels, LocationType::Pixels};
-  return pixelsDisplacement;
+  Displacement pixels_displacement{};
+
+  // Handle x coordinate of the point.
+  switch (displacement.type_dx) {
+    case LocationType::Coordinate: {
+      auto& description = image_->canvas_coordinate_description_.find(this)->second;
+      auto proportion_x = displacement.dx / (description.right - description.left);
+      pixels_displacement.dx = (location.right - location.left) * proportion_x;
+      break;
+    }
+    case LocationType::Pixels: {
+      pixels_displacement.dx = displacement.dx; // Already in pixels.
+      break;
+    }
+    case LocationType::Proportional: {
+      pixels_displacement.dx = (location.right - location.left) * displacement.dx;
+      break;
+    }
+    default:
+      GEMINI_FAIL("unrecognized LocationType");
+  }
+
+  // Handle y coordinate of the point.
+  switch (displacement.type_dy) {
+    case LocationType::Coordinate: {
+      auto& description = image_->canvas_coordinate_description_.find(this)->second;
+      auto proportion_y = displacement.dy / (description.top - description.bottom);
+      pixels_displacement.dy = (location.top - location.bottom) * proportion_y;
+      break;
+    }
+    case LocationType::Pixels: {
+      pixels_displacement.dy = displacement.dy; // Already in pixels.
+      break;
+    }
+    case LocationType::Proportional: {
+      pixels_displacement.dy = (location.top - location.bottom) * displacement.dy;
+      break;
+    }
+    default:
+      GEMINI_FAIL("unrecognized LocationType");
+  }
+
+  return pixels_displacement;
 }
 
 bool Canvas::isTopLevelCanvas() const {
   return parent_ == nullptr;
 }
 
-void Canvas::writeOnBitmap(Bitmap &image) const {
+void Canvas::writeOnBitmap(Bitmap& image) const {
   CanvasLocation location = image_->GetLocation(this);
-  image.SetPermittedRegion(std::floor(location.left),
-                           std::ceil(location.right),
-                           std::floor(location.bottom),
-                           std::ceil(location.top));
+  image.SetPermittedRegion(
+      std::floor(location.left),
+      std::ceil(location.right),
+      std::floor(location.bottom),
+      std::ceil(location.top));
 
   if (paint_background_) {
     paintBackground(image);
   }
 
-  for (const auto &shape: shapes_) {
+  for (const auto& shape: shapes_) {
     shape->DrawOnBitmap(image, this);
   }
 
-  for (const auto &child: child_canvases_) {
+  for (const auto& child: child_canvases_) {
     child->writeOnBitmap(image);
   }
 }
 
-void Canvas::paintBackground(Bitmap &image) const {
-  auto &location = image_->canvas_locations_.find(this)->second;
+void Canvas::paintBackground(Bitmap& image) const {
+  auto& location = image_->canvas_locations_.find(this)->second;
 
   for (int x = location.left; x < location.right; ++x) {
     for (int y = location.bottom; y < location.top; ++y) {

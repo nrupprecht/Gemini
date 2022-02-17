@@ -9,15 +9,14 @@ using namespace gemini::core;
 using namespace gemini::text;
 using namespace gemini::core::shapes;
 
-
 TrueTypeFontEngine::TrueTypeFontEngine(std::shared_ptr<TrueType> font, PointSize point_size, unsigned int resolution)
     : font_(std::move(font)), point_size_(point_size), resolution_(resolution) {
   // Find a default glyph map to use.
   int index = 0;
-  for (auto& [platform, encoding, offset] : font_->cmap_table_.encoding_records) {
+  for (auto&[platform, encoding, offset]: font_->cmap_table_.encoding_records) {
     if (!font_->cmap_table_.glyph_index_map[index].empty() &&
         ((platform == 0 && 0 <= encoding && encoding < 5)
-        || (platform == 3 && (encoding == 0 || encoding == 1 || encoding == 10)))) {
+            || (platform == 3 && (encoding == 0 || encoding == 1 || encoding == 10)))) {
       platform_id_ = platform;
       encoding_id_ = encoding;
       glyph_map = &font_->cmap_table_.glyph_index_map[index];
@@ -32,8 +31,8 @@ TrueTypeFontEngine::TrueTypeFontEngine(std::shared_ptr<TrueType> font, PointSize
 
 Bitmap TrueTypeFontEngine::MakeCharacter(uint16 char_number) const {
   auto glyph_index = getGlyphIndex(char_number);
-  auto &glyph = font_->glyf_table_.entries.at(glyph_index);
-  auto &spacing = font_->spacing_map_.at(glyph_index);
+  auto& glyph = font_->glyf_table_.entries.at(glyph_index);
+  auto& spacing = font_->spacing_map_.at(glyph_index);
 
   auto width = spacing.width, height = spacing.height;
   auto xmin = glyph.xmin, ymin = glyph.ymin;
@@ -50,15 +49,17 @@ Bitmap TrueTypeFontEngine::MakeCharacter(uint16 char_number) const {
   return bmp;
 }
 
-void TrueTypeFontEngine::WriteCharacter(uint16 char_number,
-                                        Bitmap &bmp,
-                                        int16 x,
-                                        int16 y,
-                                        bool shift_is_pixels) const {
+void TrueTypeFontEngine::WriteCharacter(
+    uint16 char_number,
+    Bitmap& bmp,
+    int16 x,
+    int16 y,
+    bool shift_is_pixels) const {
   PrepareCharacter(char_number);
   if (shift_is_pixels) {
     spline_.ShiftScaled(GetScale(), x, y);
-  } else {
+  }
+  else {
     spline_.ScaleShifted(GetScale(), x, y);
   }
   WriteCharacter(bmp, color::Black);
@@ -68,12 +69,20 @@ double TrueTypeFontEngine::GetScale() const {
   return point_size_ * resolution_ / (72. * font_->head_table_.units_per_em);
 }
 
-std::tuple<uint16, uint16, uint16> TrueTypeFontEngine::GetSpacing(uint16 char_number) const {
+SpacingInfo TrueTypeFontEngine::GetSpacing(uint16 char_number) const {
   auto glyph_index = getGlyphIndex(char_number);
-  const auto&[x, y, width, height, lsb, rsb, advance] = font_->GetSpacing(glyph_index);
+  auto spacing = font_->GetSpacing(glyph_index);
 
   double scale = GetScale();
-  return {scale * width, scale * height, scale * advance};
+  spacing.xmin *= scale;
+  spacing.ymin *= scale;
+  spacing.width *= scale;
+  spacing.height *= scale;
+  spacing.lsb *= scale;
+  spacing.rsb *= scale;
+  spacing.advance *= scale;
+
+  return spacing;
 }
 
 void TrueTypeFontEngine::SetFontSize(PointSize point) {
@@ -107,7 +116,7 @@ uint16 TrueTypeFontEngine::getGlyphIndex(uint16 char_number) const {
   return 0;
 }
 
-const TrueType::GlyphData &TrueTypeFontEngine::getGlyph(uint16 char_number) const {
+const TrueType::GlyphData& TrueTypeFontEngine::getGlyph(uint16 char_number) const {
   GEMINI_REQUIRE(glyph_map, "glyph map is not set in TrueTypeFontEngine");
   if (auto gt = glyph_map->find(char_number); gt != glyph_map->end()) {
     auto glyph_index = gt->second;

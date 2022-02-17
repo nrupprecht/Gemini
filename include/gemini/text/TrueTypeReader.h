@@ -51,6 +51,14 @@ enum GlyfFlags : uint8 {
   Y_DELTA   = 0b00100000,
 };
 
+//! \brief Structure that contains basic information about character dimensions and how they are spaced.
+struct SpacingInfo {
+  int16 xmin, ymin;
+  uint16 width, height;
+  int16 lsb, rsb;
+  uint16 advance;
+};
+
 
 //! \brief Class that encodes a TrueType font.
 class GEMINI_EXPORT TrueType {
@@ -315,12 +323,7 @@ class GEMINI_EXPORT TrueType {
     std::map<uint16, uint16> glyph_index_map;
   };
 
-  struct SpacingInfo {
-    int16 xmin, ymin;
-    uint16 width, height;
-    int16 lsb, rsb;
-    uint16 advance;
-  };
+
 
   //! \brief Parse format data in format 4.
   //! Reference: https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#format-4-segment-mapping-to-delta-values.
@@ -351,28 +354,10 @@ class GEMINI_EXPORT TrueType {
     }
 
     // Otherwise, return the missing character glyph.
-    return spacing_map_.find(0)->second; // Something random.
+    return spacing_map_.find(0)->second;
   }
 };
 
-
-//inline void PrintTableIndex(std::ostream& out, const TrueType& font) {
-//  // Print the set of tables.
-//  int count = 0;
-//  out << "┌─────┬────────┬──────────┬──────────┐" << std::endl;
-//  out << std::left << std::setw(5) << "│  #  │"
-//      << std::left << std::setw(8) << " Tag"
-//      << std::setw(13) << "│ Length" << std::setw(10) << "│ Offset   │" << std::endl;
-//  out << "├─────┼────────┼──────────┼──────────┤" << std::endl;
-//  for (const auto& [name, table] : font.GetTables()) {
-//    out << "│ " << std::left << std::setw(4) << std::to_string(count)
-//        << "│ " << std::setw(7) << name
-//        << "│ " << std::setw(9) << table.length
-//        << "│ " << std::setw(9) << table.offset << "│" << std::endl;
-//    ++count;
-//  }
-//  out << "└─────┴────────┴──────────┴──────────┘" << std::endl;
-//}
 
 } // namespace gemini::text
 

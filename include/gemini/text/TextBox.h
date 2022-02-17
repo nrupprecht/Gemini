@@ -14,24 +14,31 @@
 
 namespace gemini::text {
 
- class GEMINI_EXPORT TextBox : public gemini::core::Shape {
+class GEMINI_EXPORT TextBox : public gemini::core::Shape {
  public:
 
   explicit TextBox(std::shared_ptr<TrueTypeFontEngine> ttf);
 
   void AddText(const std::string& text);
 
+  //! \brief Set the font size.
   void SetFontSize(double font_size);
 
+  //! \brief Set the anchor point for the text box.
+  //!
+  //! \param anchor_point The bottom left point (relative to the text).
   void SetAnchor(Point anchor_point);
 
+  //! \brief Set the angle at which the text will be rendered.
   void SetAngle(double theta);
 
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
 
-  void DrawOnBitmap(gemini::core::Bitmap& bitmap, const gemini::core::Canvas* canvas) const override;
-
  private:
+
+  void drawOnBitmap(gemini::core::Bitmap& bitmap, const gemini::core::Canvas* canvas) const override;
+
+  NO_DISCARD CoordinateBoundingBox calculatePixelsBoundingBox() const;
 
   //! \brief The TrueType font this text box uses.
   std::shared_ptr<TrueTypeFontEngine> ttf_;

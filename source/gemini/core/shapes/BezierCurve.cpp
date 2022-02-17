@@ -9,8 +9,9 @@ using namespace gemini;
 using namespace gemini::core;
 using namespace gemini::core::shapes;
 
+
 NO_DISCARD BezierCurve BezierCurve::Copy() const {
-  return BezierCurve{ contour_ends, points };
+  return BezierCurve{contour_ends, points};
 }
 
 NO_DISCARD std::size_t BezierCurve::NumPoints() const {
@@ -22,65 +23,71 @@ NO_DISCARD std::size_t BezierCurve::NumContours() const {
 }
 
 BezierCurve& BezierCurve::Scale(double factor) {
-  std::for_each(points.begin(), points.end(), [=](auto &p) {
-    p.x *= factor;
-    p.y *= factor;
-  });
+  std::for_each(
+      points.begin(), points.end(), [=](auto& p) {
+        p.x *= factor;
+        p.y *= factor;
+      });
   return *this;
 }
 
 BezierCurve& BezierCurve::Translate(double dx, double dy) {
-  std::for_each(points.begin(), points.end(), [=](auto &p) {
-    p.x += dx;
-    p.y += dy;
-  });
+  std::for_each(
+      points.begin(), points.end(), [=](auto& p) {
+        p.x += dx;
+        p.y += dy;
+      });
   return *this;
 }
 
 BezierCurve& BezierCurve::Rotate(double theta) {
   double cth = std::cos(theta), sth = std::sin(theta);
-  std::for_each(points.begin(), points.end(), [=](auto &p) {
-    double nx = p.x * cth - p.y * sth, ny = p.x * sth + p.y * cth;
-    p.x = nx, p.y = ny;
-  });
+  std::for_each(
+      points.begin(), points.end(), [=](auto& p) {
+        double nx = p.x * cth - p.y * sth, ny = p.x * sth + p.y * cth;
+        p.x = nx, p.y = ny;
+      });
   return *this;
 }
 
 BezierCurve& BezierCurve::SkewX(double theta) {
-
   GEMINI_REQUIRE (-0.5 * math::PI < theta && theta < 0.5 * math::PI,
                   "theta must be in the range (-π/2, +π/2)");
 
   double tth = std::tan(theta);
-  std::for_each(points.begin(), points.end(), [=](auto &p) {
-    p.x += p.y * tth;
-  });
+  std::for_each(
+      points.begin(), points.end(), [=](auto& p) {
+        p.x += p.y * tth;
+      });
   return *this;
 }
 
 BezierCurve& BezierCurve::ScaleShifted(double factor, double dx, double dy) {
-  std::for_each(points.begin(), points.end(), [=](auto &p) {
-    p.x = factor * (p.x + dx);
-    p.y = factor * (p.y + dy);
-  });
+  std::for_each(
+      points.begin(), points.end(), [=](auto& p) {
+        p.x = factor * (p.x + dx);
+        p.y = factor * (p.y + dy);
+      });
   return *this;
 }
 
 BezierCurve& BezierCurve::ShiftScaled(double factor, double dx, double dy) {
-  std::for_each(points.begin(), points.end(), [=](auto &p) {
-    p.x = factor * p.x + dx;
-    p.y = factor * p.y + dy;
-  });
+  std::for_each(
+      points.begin(), points.end(), [=](auto& p) {
+        p.x = factor * p.x + dx;
+        p.y = factor * p.y + dy;
+      });
   return *this;
 }
 
 namespace gemini::core::shapes {
 
-void RasterBezierCurve(const BezierCurve& spline,
-                       Bitmap& bmp,
-                       color::PixelColor color,
-                       double z,
-                       bool color_by_spline) {
+void RasterBezierCurve(
+    const BezierCurve& spline,
+    Bitmap& bmp,
+    color::PixelColor color,
+    double z,
+    bool color_by_spline) {
   using Direction = bool;
 
   std::map<uint16_t, std::vector<std::tuple<double, Direction, uint16_t>>> y_divisions;
@@ -110,7 +117,7 @@ void RasterBezierCurve(const BezierCurve& spline,
           }
         }
       }
-      // Spline.
+        // Spline.
       else {
         auto p2_index = p1_index == spline_end ? spline_begin : p1_index + 1;
         auto& p2 = spline.points[p2_index];
@@ -182,10 +189,10 @@ void RasterBezierCurve(const BezierCurve& spline,
     }
   }
 
-  for (auto& [y, crossings] : y_divisions) {
+  for (auto&[y, crossings]: y_divisions) {
     int count_wrapping = 0;
     std::sort(crossings.begin(), crossings.end());
-    for (int i = 0; i < crossings.size() - 1; ) {
+    for (int i = 0; i < crossings.size() - 1;) {
       // Keep track of winding number.
 
       // This point is the end of one spline segment and the beginning of the next. Skip it.
@@ -217,10 +224,10 @@ void RasterBezierCurve(const BezierCurve& spline,
 } // namespace gemini::shapes
 
 
-void QuadraticBezierCurve::DrawOnBitmap(Bitmap &bitmap, const Canvas *canvas) const {
-  RasterBezierCurve(spline_, bitmap, color_, false);
-}
-
 CoordinateBoundingBox QuadraticBezierCurve::GetBoundingBox() const {
   return {};
+}
+
+void QuadraticBezierCurve::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
+  RasterBezierCurve(spline_, bitmap, color_, false);
 }

@@ -9,12 +9,31 @@
 using namespace gemini;
 using namespace gemini::core;
 
+namespace gemini::core {
+
+GeometricPoint Rotate(const GeometricPoint& p, double theta) {
+  double cth = std::cos(theta), sth = std::sin(theta);
+  double nx = p.x * cth - p.y * sth, ny = p.x * sth + p.y * cth;
+  return {nx, ny};
+}
+
+} // namespace gemini::core
+
+void Shape::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
+  bitmap.SetRestrictRegion(restricted_);
+  drawOnBitmap(bitmap, canvas);
+}
+
 void Shape::write(Bitmap& bitmap, int x, int y, color::PixelColor color) const {
   bitmap.SetPixel(x, y, color, zorder_);
 }
 
 void Shape::SetZOrder(double z) {
   zorder_ = z;
+}
+
+void Shape::SetRestricted(bool r) {
+  restricted_ = r;
 }
 
 CoordinateBoundingBox Line::GetBoundingBox() const {
@@ -53,7 +72,7 @@ CoordinateBoundingBox Line::GetBoundingBox() const {
   return { min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y };
 }
 
-void BresenhamLine::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
+void BresenhamLine::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   auto absolute_first = canvas->PointToPixels(first);
   auto absolute_second = canvas->PointToPixels(second);
 
@@ -71,7 +90,7 @@ void BresenhamLine::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   }
 }
 
-void XiaolinWuLine::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
+void XiaolinWuLine::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   auto absolute_first = canvas->PointToPixels(first);
   auto absolute_second = canvas->PointToPixels(second);
 
@@ -151,7 +170,7 @@ void XiaolinWuLine::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   }
 }
 
-void XiaolinWuThickLine::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
+void XiaolinWuThickLine::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   auto absolute_first = canvas->PointToPixels(first);
   auto absolute_second = canvas->PointToPixels(second);
 
@@ -270,8 +289,8 @@ void XiaolinWuThickLine::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) cons
   }
 }
 
-void Ray::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
-  auto base_pixels = canvas->PointToPixels(base_);
+void Ray::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
+  auto base_pixels = canvas->PointToPixels(base_, true);
   auto ray_pixels = canvas->DisplacementToPixels(ray_);
 
   auto end_point = Point{ base_pixels.x + ray_pixels.dx,
@@ -307,7 +326,7 @@ CoordinateBoundingBox Ray::GetBoundingBox() const {
   return { min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y };
 }
 
-void Circle::DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
+void Circle::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   auto pixel_center = canvas->PointToPixels(center);
   auto x0 = pixel_center.x, y0 = pixel_center.y;
 

@@ -92,10 +92,6 @@ void TrueType::ReadTTF(const std::string &filename) {
     }
   }
 
-  for (auto [tag, table] : tables_) {
-    std::cout << tag << std::endl;
-  }
-
   // ============================================================================================================
   // The required tables (for OpenType or TrueType) are cmap, head, hhea, hmtx, maxp, name, OS/2, post.
   // ============================================================================================================

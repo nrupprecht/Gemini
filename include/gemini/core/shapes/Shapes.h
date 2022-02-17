@@ -14,20 +14,41 @@ namespace gemini::core {
 // Forward declaration to Canvas.
 class Canvas;
 
+struct GeometricPoint {
+  double x{}, y{};
+};
+
+GeometricPoint Rotate(const GeometricPoint& p, double theta);
+
 
 //! \brief Abstract base class for shapes that can be drawn on bitmaps.
 class GEMINI_EXPORT Shape {
  public:
-  virtual void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const = 0;
+  //! \brief Raster a shape onto a bitmap.
+  virtual void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const;
+
+  //! \brief Get a bounding box for the shape.
   NO_DISCARD virtual CoordinateBoundingBox GetBoundingBox() const = 0;
 
+  //! \brief Set the default z order for the shape.
   void SetZOrder(double z);
+
+  //! \brief Set whether the shape should be restricted to only draw in the permitted region of the bitmap.
+  void SetRestricted(bool r);
+
  protected:
+  //! \brief Private purely virtual method for rendering the shape onto a bitmap.
+  virtual void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const = 0;
+
   //! \brief Write on a bitmap using the proper z-order.
   void write(Bitmap& bitmap, int x, int y, color::PixelColor color) const;
 
   //! \brief The default zorder for the shape.
   double zorder_ = 1.;
+
+  //! \brief Whether the shape should be restricted to only draw in the permitted region of whatever bitmap it
+  //! is rastered onto.
+  bool restricted_ = true;
 };
 
 class GEMINI_EXPORT Line : public Shape {
@@ -50,7 +71,8 @@ class GEMINI_EXPORT BresenhamLine final : public Line {
   : Line(first, second, color)
   {}
 
-  void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
+ private:
+  void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
 };
 
 class GEMINI_EXPORT XiaolinWuLine final : public Line {
@@ -59,7 +81,8 @@ class GEMINI_EXPORT XiaolinWuLine final : public Line {
   : Line(first, second, color)
   {}
 
-  void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
+ private:
+  void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
 };
 
 class GEMINI_EXPORT XiaolinWuThickLine final : public Line {
@@ -70,7 +93,8 @@ class GEMINI_EXPORT XiaolinWuThickLine final : public Line {
 
   double pixel_thickness;
 
-  void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
+ private:
+  void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
 };
 
 class GEMINI_EXPORT Ray final : public Shape {
@@ -79,9 +103,10 @@ class GEMINI_EXPORT Ray final : public Shape {
   : base_(base), ray_(ray), color_(color), thickness_(thickness)
   {}
 
-  void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
  private:
+  void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
+
   Point base_;
   Displacement ray_;
   color::PixelColor color_;
@@ -98,8 +123,10 @@ struct GEMINI_EXPORT Circle final : public Shape {
   Distance radius{};
   color::PixelColor color = color::Black;
 
-  void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
+
+ private:
+  void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
 };
 
 } // namespace gemini::core

@@ -29,7 +29,7 @@ class GEMINI_EXPORT TrueTypeFontEngine {
 
   NO_DISCARD double GetScale() const;
 
-  NO_DISCARD std::tuple<uint16, uint16, uint16> GetSpacing(uint16 char_number) const;
+  NO_DISCARD SpacingInfo GetSpacing(uint16 char_number) const;
 
   void SetFontSize(PointSize point);
 
@@ -53,7 +53,7 @@ class GEMINI_EXPORT TrueTypeFontEngine {
   NO_DISCARD uint16 getGlyphIndex(uint16 char_number) const;
 
   //! \brief Get a glyph by character number.
-  NO_DISCARD const TrueType::GlyphData &getGlyph(uint16 char_number) const;
+  NO_DISCARD const TrueType::GlyphData& getGlyph(uint16 char_number) const;
 
   //! \brief The spline of the character being prepared.
   mutable core::shapes::BezierCurve spline_;
