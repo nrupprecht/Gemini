@@ -10,45 +10,9 @@
 #include <thread>
 #include <new>
 
-std::string interpolateName(const std::string &a, const std::string &b, double lambda) {
-  if (lambda < 0 || 1 < lambda) {
-    throw std::runtime_error("lambda must be in the range [0, 1]");
-  }
-  // Since the names might now be the same length, we have to interpolate their length as well.
-  auto name_length = static_cast<std::size_t>(std::round(lambda * a.size() + (1. - lambda) * b.size()));
-  std::string final_name;
-  std::size_t i = 0;
-  for (; i < std::min(a.size(), b.size()); ++i) {
-    auto interp_char = lambda * std::tolower(a[i]) + (1. - lambda) * std::tolower(b[i]);
-    final_name.push_back(static_cast<char>(std::round(interp_char)));
-  }
-  auto &longer_name = a.size() < b.size() ? b : a;
-  for (; i < name_length; ++i) {
-    final_name.push_back(longer_name[i]);
-  }
-  return final_name;
-}
+using namespace gemini::plot;
 
-int main(int argc, char **argv) {
-
-  // Read font description.
-  auto true_type = std::make_shared<gemini::text::TrueType>();
-  true_type->ReadTTF("/Users/nathaniel/Documents/times.ttf");
-  // true_type->ReadTTF("/Users/nathaniel/Documents/NotoSansSC-Black.otf");
-
-  auto engine = std::make_shared<gemini::text::TrueTypeFontEngine>(true_type, 20, 250);
-
-//  gemini::Image image(3000, 3000);
-//  auto canvas = image.GetMasterCanvas();
-//
-//  auto text = std::make_shared<gemini::text::TextBox>(engine);
-//  text->SetAnchor(gemini::MakeRelativePoint(0., 0.5));
-//  text->AddText("To all those haters out there, I've just got to say, I don't have any time for you!");
-//  canvas->AddShape(text);
-//  auto tbmp = image.ToBitmap();
-//  tbmp.ToFile("../../out/TextTest.bmp");
-
-
+int main(int argc, char** argv) {
   gemini::plot::Figure figure(2048, 1024);
 
   int npoints = 100;
@@ -78,7 +42,15 @@ int main(int argc, char **argv) {
   figure.Plot(x, y5);
   figure.Plot(x, y6);
   figure.PlotErrorbars(x, y7, err);
-  figure.Scatter(x, y8);
+
+  {
+    gemini::plot::ScatterPlotOptions options{};
+    options.marker = std::make_shared<gemini::plot::marker::Ex>();
+    options.marker->SetScale(10.);
+    figure.Scatter(x, y8, options);
+  }
+
+
 
 //  auto& image = figure.GetImage();
 //  auto text = std::make_shared<gemini::text::TextBox>(engine);
@@ -89,6 +61,7 @@ int main(int argc, char **argv) {
 //  text->SetZOrder(5);
 //  image.GetMasterCanvas()->AddShape(text);
 
+  figure.Title("Big Sample Graph");
   figure.ToFile("../../out/figure.bmp");
 
   return 0;

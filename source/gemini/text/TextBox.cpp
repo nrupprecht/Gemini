@@ -38,6 +38,7 @@ CoordinateBoundingBox TextBox::GetBoundingBox() const {
 
 void TextBox::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   GEMINI_REQUIRE(0 < font_size_, "font size must be > 0");
+  GEMINI_REQUIRE(ttf_, "there is no font engine");
 
   ttf_->SetFontSize(static_cast<PointSize>(font_size_));
 

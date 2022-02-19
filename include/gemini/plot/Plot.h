@@ -7,6 +7,8 @@
 
 #include "gemini/core/Canvas.h"
 #include "gemini/text/TrueTypeFontEngine.h"
+#include "gemini/plot/Marker.h"
+#include <optional>
 
 namespace gemini::plot {
 
@@ -36,14 +38,66 @@ inline GEMINI_EXPORT std::vector<core::color::PixelColor> ColorPaletteHLS() {
   };
 }
 
+struct LinePlotOptions {
+  core::color::PixelColor color;
+
+};
+
+//! \brief A structure that encapsulates the options available for a scatter plot.
+struct ScatterPlotOptions {
+  //! \brief The color that should be used for the scatter plot.
+  //!
+  //! TODO: This could be really general, like a function that determines a color as a function of where the marker is and what order its in.
+  std::optional<core::color::PixelColor> color;
+
+  //! \brief The marker to use for the scatterplot.
+  //!
+  //! TODO: This could also be really general, like a function that determines a Marker, as a function of where the marker is and what order its in.
+  std::shared_ptr<marker::Marker> marker;
+
+  //! \brief The label that should be used with the plot legend. Empty corresponds to no label.
+  std::string label{};
+
+  // ==========================================================================================
+  //  Builder functions.
+  // ==========================================================================================
+
+  //! \brief Set the plot color.
+  ScatterPlotOptions& Color(const core::color::PixelColor& col) {
+    color = col;
+    return *this;
+  }
+
+  //! \brief Set the plot marker.
+  ScatterPlotOptions& Marker(const std::shared_ptr<marker::Marker>& mark) {
+    marker = mark;
+    return *this;
+  }
+
+  //! \brief Set the plot label.
+  ScatterPlotOptions& Label(const std::string& lbl) {
+    label = lbl;
+    return *this;
+  }
+
+};
+
+struct ErrorPlotOptions {
+  core::color::PixelColor color;
+};
+
 
 class GEMINI_EXPORT Figure {
  public:
   //! \brief Create a figure with a specified pixel width and height.
   Figure(int width, int height);
 
+  //! \brief Set the figure title.
+  void Title(const std::string& title);
+
   void Plot(const std::vector<double>& x, const std::vector<double>& y, const std::string& label = "");
   void Scatter(const std::vector<double>& x, const std::vector<double>& y, const std::string& label = "");
+  void Scatter(const std::vector<double>& x, const std::vector<double>& y, const ScatterPlotOptions& options);
   void PlotErrorbars(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& err, const std::string& label = "");
 
   //! \brief Set the x range of the image.

@@ -46,7 +46,10 @@ struct GEMINI_EXPORT Distance {
 
 //! \brief A bounding box, in coordinate space.
 struct GEMINI_EXPORT CoordinateBoundingBox {
-  double left, right, bottom, top;
+  double left = std::numeric_limits<double>::quiet_NaN();
+  double right = std::numeric_limits<double>::quiet_NaN();
+  double bottom = std::numeric_limits<double>::quiet_NaN();
+  double top = std::numeric_limits<double>::quiet_NaN();
 };
 
 }

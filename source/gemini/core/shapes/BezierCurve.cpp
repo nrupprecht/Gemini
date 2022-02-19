@@ -80,6 +80,15 @@ BezierCurve& BezierCurve::ShiftScaled(double factor, double dx, double dy) {
   return *this;
 }
 
+BezierCurve BezierCurve::MakeSingleContourCurve(const std::vector<BezierPoint>& points) {
+  BezierCurve curve;
+  if (!points.empty()) {
+    curve.points = points;
+    curve.contour_ends.push_back(static_cast<unsigned short>(points.size()) - 1);
+  }
+  return curve;
+}
+
 namespace gemini::core::shapes {
 
 void RasterBezierCurve(

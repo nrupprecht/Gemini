@@ -27,6 +27,10 @@ Figure::Figure(int width, int height)
   auto engine = std::make_shared<gemini::text::TrueTypeFontEngine>(true_type, 20, 250);
 }
 
+void Figure::Title(const std::string& title) {
+  title_ = title;
+}
+
 void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, const std::string& label) {
   GEMINI_REQUIRE(x.size() == y.size(), "x and y do not have the same number of points");
 
@@ -93,6 +97,26 @@ void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y,
 
   if (!label.empty()) {
     legend_data_.push_back(LegendEntry{plot_color, label});
+  }
+  updateColorPalette();
+}
+
+void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y, const ScatterPlotOptions& options) {
+  if (x.empty()) {
+    return;
+  }
+
+  // Plot points.
+  auto& plot_color = color_palette_[palette_index_];
+  for (int i = 1; i < x.size(); ++i) {
+    auto point = gemini::MakeCoordinatePoint(x[i], y[i]);
+    options.marker->PlaceMarker(point);
+    options.marker->SetColor(plot_color);
+    plotting_canvas_->AddShape(options.marker->Copy());
+  }
+
+  if (!options.label.empty()) {
+    legend_data_.push_back(LegendEntry{plot_color, options.label});
   }
   updateColorPalette();
 }
@@ -178,6 +202,14 @@ void Figure::SetYRange(double ymin, double ymax) {
 }
 
 void Figure::ToFile(const std::string& filepath) {
+  // TODO: How to handle this?
+  std::filesystem::path this_file_path(__FILE__);
+  auto gemini_directory = this_file_path.parent_path().parent_path().parent_path().parent_path();
+  auto true_type = std::make_shared<gemini::text::TrueType>();
+  true_type->ReadTTF(gemini_directory / "fonts" / "times.ttf");
+  ttf_engine_ = std::make_shared<gemini::text::TrueTypeFontEngine>(true_type, 20, 250);
+
+
   // Left vertical
   plotting_canvas_->AddShape(
       std::make_shared<XiaolinWuThickLine>(
@@ -230,9 +262,25 @@ void Figure::ToFile(const std::string& filepath) {
     image_.Relation_Fix(0, CanvasPart::Right, 1, CanvasPart::Right, -15);
   }
 
+  // Check whether we need a title.
+  if (!title_.empty()) {
+    image_.Relation_Fix(0, CanvasPart::Top, 1, CanvasPart::Top, -60);
+
+    // Title text box.
+    auto label = std::make_shared<text::TextBox>(ttf_engine_);
+    plotting_canvas_->AddShape(label);
+    label->AddText(title_);
+    label->SetZOrder(10);
+    label->SetAnchor(gemini::Point{0.5, 1.015, LocationType::Proportional, LocationType::Proportional});
+    label->SetFontSize(15);
+  }
+  else {
+    image_.Relation_Fix(0, CanvasPart::Top, 1, CanvasPart::Top, -15);
+  }
+
   image_.Relation_Fix(0, CanvasPart::Left, 1, CanvasPart::Left, 64);
   // image_.Relation_Fix(0, CanvasPart::Right, 1, CanvasPart::Right, -15);
-  image_.Relation_Fix(0, CanvasPart::Top, 1, CanvasPart::Top, -15);
+
   image_.Relation_Fix(0, CanvasPart::Bottom, 1, CanvasPart::Bottom, 64);
 
   // Create any plot axis ticks and numbering.
@@ -241,12 +289,7 @@ void Figure::ToFile(const std::string& filepath) {
   // Determine the length, in pixels, of the x and y ticks so that they are the same size.
   double tick_length = std::max(5, static_cast<int>(0.01 * std::min(image_.GetWidth(), image_.GetHeight())));
 
-  // TODO: How to handle this?
-  std::filesystem::path this_file_path(__FILE__);
-  auto gemini_directory = this_file_path.parent_path().parent_path().parent_path().parent_path();
-  auto true_type = std::make_shared<gemini::text::TrueType>();
-  true_type->ReadTTF(gemini_directory / "fonts" / "times.ttf");
-  ttf_engine_ = std::make_shared<gemini::text::TrueTypeFontEngine>(true_type, 20, 250);
+
 
   // TODO: Improve tick positioning choices.
 
