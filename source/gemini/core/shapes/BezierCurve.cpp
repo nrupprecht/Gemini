@@ -80,6 +80,26 @@ BezierCurve& BezierCurve::ShiftScaled(double factor, double dx, double dy) {
   return *this;
 }
 
+BezierCurve& BezierCurve::ReverseWinding() {
+  unsigned short bg = 0;
+  for (auto end : contour_ends) {
+    std::reverse(std::next(points.begin(), bg), std::next(points.begin(), end));
+    bg = end + 1;
+  }
+  return *this;
+}
+
+BezierCurve& BezierCurve::Append(const BezierCurve& curve) {
+  auto sz = points.size();
+  std::for_each(curve.contour_ends.begin(), curve.contour_ends.end(), [&] (auto e) {
+    contour_ends.push_back(e + sz);
+  });
+  std::for_each(curve.points.begin(), curve.points.end(), [&] (auto& p) {
+    points.push_back(p);
+  });
+  return *this;
+}
+
 BezierCurve BezierCurve::MakeSingleContourCurve(const std::vector<BezierPoint>& points) {
   BezierCurve curve;
   if (!points.empty()) {
@@ -202,10 +222,10 @@ void RasterBezierCurve(
     int count_wrapping = 0;
     std::sort(crossings.begin(), crossings.end());
     for (int i = 0; i < crossings.size() - 1;) {
+      int j = i + 1;
       // Keep track of winding number.
 
-      // This point is the end of one spline segment and the beginning of the next. Skip it.
-      int j = i + 1;
+      // If true, this point is the end of one spline segment and the beginning of the next. Skip it.
       if (std::get<0>(crossings[i]) == std::get<0>(crossings[i + 1])
           && std::get<1>(crossings[i]) == std::get<1>(crossings[i + 1])) {
         ++j;
@@ -213,11 +233,26 @@ void RasterBezierCurve(
 
       count_wrapping += std::get<1>(crossings[i]) ? 1 : -1;
       if (count_wrapping != 0) {
-        uint16_t x1 = std::floor(std::get<0>(crossings[i])), x2 = std::ceil(std::get<0>(crossings[j]));
+        double x1d = std::get<0>(crossings[i]), x2d = std::get<0>(crossings[j]);
+        uint16_t x1 = std::floor(x1d), x2 = std::floor(x2d);
 
-        for (auto x = x1; x <= x2; ++x) {
-          bmp.SetPixel(x, y, color, z);
+        // The space to raster is less than a pixel in width, and fits within one pixel.
+        if (x1 == x2) {
+          bmp.SetPixel(x1, y, color, z);
         }
+        else {
+          // Anti-alias first pixel.
+          auto set_color1 = gemini::core::color::Interpolate(bmp.GetPixel(x1, y), color, 1 - (x1d - x1));
+          bmp.SetPixel(x1, y, set_color1);
+          // Set middle pixels.
+          for (auto x = x1 + 1; x < x2; ++x) {
+            bmp.SetPixel(x, y, color, z);
+          }
+          // Anti-alias last pixel
+          auto set_color2 = gemini::core::color::Interpolate(bmp.GetPixel(x1, y), color, x2d - x2);
+          bmp.SetPixel(x2, y, set_color2);
+        }
+
         if (color_by_spline) {
           bmp.SetPixel(x1, y, colors[std::get<2>(crossings[i])], z);
           bmp.SetPixel(x2, y, colors[std::get<2>(crossings[i + 1])], z);

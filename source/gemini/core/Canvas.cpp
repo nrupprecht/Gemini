@@ -45,12 +45,22 @@ void Image::Relation_Fix(
     double pixels_diff) {
   auto it1 = std::find(canvases_.begin(), canvases_.end(), canvas1);
   auto it2 = std::find(canvases_.begin(), canvases_.end(), canvas2);
-  GEMINI_REQUIRE(it1 != canvases_.end(), "could not find first canvas") {
-  }
-  GEMINI_REQUIRE(it2 != canvases_.end(), "could not find second canvas") {
-  }
+  GEMINI_REQUIRE(it1 != canvases_.end(), "could not find first canvas");
+  GEMINI_REQUIRE(it2 != canvases_.end(), "could not find second canvas");
+
   auto index1 = std::distance(canvases_.begin(), it1), index2 = std::distance(canvases_.begin(), it2);
   Relation_Fix(static_cast<int>(index1), canvas1_part, static_cast<int>(index2), canvas2_part, pixels_diff);
+}
+
+void Image::Dimensions_Fix(
+    Canvas* canvas,
+    CanvasDimension dim,
+    double extent) {
+  auto it = std::find(canvases_.begin(), canvases_.end(), canvas);
+  GEMINI_REQUIRE(it != canvases_.end(), "could not find the canvas");
+  auto index = std::distance(canvases_.begin(), it);
+
+  canvas_dimensions_fixes_.emplace_back(index, dim, extent);
 }
 
 void Image::ClearRelationships() {
@@ -65,8 +75,7 @@ const CanvasLocation& Image::GetLocation(const class Canvas* canvas) const {
   if (auto it = canvas_locations_.find(canvas); it != canvas_locations_.end()) {
     return it->second;
   }
-  GEMINI_FAIL("could not find specified canvas in the image") {
-  }
+  GEMINI_FAIL("could not find specified canvas in the image");
 }
 
 int Image::GetWidth() const {
@@ -106,14 +115,14 @@ void Image::CalculateCanvasLocations() const {
       return;
     }
     GEMINI_FAIL("no relationships, but there are multiple canvases");
-
   }
 
   // Represents the left, bottom, right, top (in that order) of each canvas (except the master canvas).
+  int dimensionality = static_cast<int>(canvas_fixes_.size()) + static_cast<int>(canvas_dimensions_fixes_.size());
   MatrixXd relationships = MatrixXd::Zero(
-      static_cast<int>(canvas_fixes_.size()),
+      dimensionality,
       4 * (static_cast<int>(canvases_.size()) - 1));
-  MatrixXd constants = MatrixXd::Zero(static_cast<int>(canvas_fixes_.size()), 1);
+  MatrixXd constants = MatrixXd::Zero(dimensionality, 1);
 
   // Defines how to add entries in the relationship matrix for each given relationship.
   auto set_entry = [&constants, &relationships, this](int c, auto cpart, bool is_first, int count) {
@@ -180,14 +189,29 @@ void Image::CalculateCanvasLocations() const {
     ++count;
   }
 
+  // Set dimensions fixes (widths or heights).
+  for (const auto& [c, dim, extent] : canvas_dimensions_fixes_) {
+    if (dim == CanvasDimension::Width) {
+      relationships(count, 4 * (c - 1) + 0) = -1;
+      relationships(count, 4 * (c - 1) + 2) = +1;
+      constants(count, 0) = extent;
+    }
+    else {
+      relationships(count, 4 * (c - 1) + 1) = -1;
+      relationships(count, 4 * (c - 1) + 3) = +1;
+      constants(count, 0) = extent;
+    }
+
+    ++count;
+  }
+
   // Solve R X + b = 0 for X
   MatrixXd canvas_positions;
   try {
     canvas_positions = relationships.fullPivLu().solve(constants);
   }
   catch (const std::exception& ex) {
-    GEMINI_FAIL("could not determine canvas location: " << ex.what()) {
-    }
+    GEMINI_FAIL("could not determine canvas location: " << ex.what());
   }
 
   for (int i = 0; i < canvas_positions.rows() / 4; ++i) {
@@ -216,8 +240,7 @@ const CoordinateDescription& Image::GetCanvasCoordinateDescription(Canvas* canva
   if (auto it = canvas_coordinate_description_.find(canvas); it != canvas_coordinate_description_.end()) {
     return it->second;
   }
-  GEMINI_FAIL("the canvas was not a member of this image") {
-  }
+  GEMINI_FAIL("the canvas was not a member of this image");
 }
 
 void Image::registerCanvas(class Canvas* canvas) {
@@ -384,8 +407,9 @@ Point Canvas::PointToPixels(const Point& point, bool relative_to_canvas) const {
       pixel_point.x = (location.right - location.left) * point.x;
       break;
     }
-    default:
+    default: {
       GEMINI_FAIL("unrecognized LocationType");
+    }
   }
 
   // Handle y coordinate of the point.
@@ -404,9 +428,9 @@ Point Canvas::PointToPixels(const Point& point, bool relative_to_canvas) const {
       pixel_point.y = (location.top - location.bottom) * point.y;
       break;
     }
-    default:
-      GEMINI_FAIL("unrecognized LocationType") {
-      }
+    default: {
+      GEMINI_FAIL("unrecognized LocationType");
+    }
   }
 
   if (!relative_to_canvas) {
@@ -440,8 +464,7 @@ Displacement Canvas::DisplacementToPixels(const Displacement& displacement) cons
       pixels_displacement.dx = (location.right - location.left) * displacement.dx;
       break;
     }
-    default:
-      GEMINI_FAIL("unrecognized LocationType");
+    default:GEMINI_FAIL("unrecognized LocationType");
   }
 
   // Handle y coordinate of the point.
@@ -460,8 +483,7 @@ Displacement Canvas::DisplacementToPixels(const Displacement& displacement) cons
       pixels_displacement.dy = (location.top - location.bottom) * displacement.dy;
       break;
     }
-    default:
-      GEMINI_FAIL("unrecognized LocationType");
+    default:GEMINI_FAIL("unrecognized LocationType");
   }
 
   return pixels_displacement;

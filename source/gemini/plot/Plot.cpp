@@ -39,7 +39,7 @@ void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, co
   }
 
   double line_thickness = 3.;
-  auto& plot_color = color_palette_[palette_index_];
+  auto& plot_color = color_palette_[plot_palette_index_];
 
   // Plot points to cover gaps.
   auto last_point = gemini::MakeCoordinatePoint(x[0], y[0]);
@@ -47,14 +47,14 @@ void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, co
       std::make_shared<Circle>(
           last_point,
           Distance{0.5 * line_thickness, LocationType::Pixels},
-          color_palette_[palette_index_]));
+          plot_color));
   for (int i = 1; i < x.size(); ++i) {
     auto point = gemini::MakeCoordinatePoint(x[i], y[i]);
     plotting_canvas_->AddShape(
         std::make_shared<Circle>(
             point,
             Distance{0.5 * line_thickness, LocationType::Pixels},
-            color_palette_[palette_index_]));
+            plot_color));
     last_point = point;
   }
 
@@ -66,7 +66,7 @@ void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, co
         std::make_shared<XiaolinWuThickLine>(
             last_point,
             point,
-            color_palette_[palette_index_],
+            plot_color,
             line_thickness));
     last_point = point;
   }
@@ -74,10 +74,14 @@ void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, co
   if (!label.empty()) {
     legend_data_.push_back(LegendEntry{plot_color, label});
   }
-  updateColorPalette();
+  updateColorPalette(plot_palette_index_);
 }
 
 void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y, const std::string& label) {
+  Scatter(x, y, ScatterPlotOptions{}.Label(label));
+}
+
+void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y, const ScatterPlotOptions& options) {
   GEMINI_REQUIRE(x.size() == y.size(), "x and y do not have the same number of points");
 
   if (x.empty()) {
@@ -85,30 +89,8 @@ void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y,
   }
 
   // Plot points.
-  auto& plot_color = color_palette_[palette_index_];
-  for (int i = 1; i < x.size(); ++i) {
-    auto point = gemini::MakeCoordinatePoint(x[i], y[i]);
-    plotting_canvas_->AddShape(
-        std::make_shared<Circle>(
-            point,
-            Distance{2.5, LocationType::Pixels},
-            plot_color));
-  }
-
-  if (!label.empty()) {
-    legend_data_.push_back(LegendEntry{plot_color, label});
-  }
-  updateColorPalette();
-}
-
-void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y, const ScatterPlotOptions& options) {
-  if (x.empty()) {
-    return;
-  }
-
-  // Plot points.
-  auto& plot_color = color_palette_[palette_index_];
-  for (int i = 1; i < x.size(); ++i) {
+  auto plot_color = options.color.value_or(color_palette_[scatter_palette_index_]);
+  for (int i = 0; i < x.size(); ++i) {
     auto point = gemini::MakeCoordinatePoint(x[i], y[i]);
     options.marker->PlaceMarker(point);
     options.marker->SetColor(plot_color);
@@ -118,7 +100,11 @@ void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y,
   if (!options.label.empty()) {
     legend_data_.push_back(LegendEntry{plot_color, options.label});
   }
-  updateColorPalette();
+
+  // If a color was not specified, increment the color palette.
+  if (!options.color.has_value()) {
+    updateColorPalette(scatter_palette_index_);
+  }
 }
 
 void Figure::PlotErrorbars(
@@ -134,7 +120,7 @@ void Figure::PlotErrorbars(
   }
 
   const double thickness = 2.;
-  auto& plot_color = color_palette_[palette_index_];
+  auto& plot_color = color_palette_[error_palette_index_];
 
   // Plot points.
   for (int i = 0; i < x.size(); ++i) {
@@ -152,17 +138,19 @@ void Figure::PlotErrorbars(
     plotting_canvas_->AddShape(
         std::make_shared<Ray>(
             point1,
-            gemini::Displacement{5, 0,
-                                 LocationType::Pixels,
-                                 LocationType::Pixels},
+            gemini::Displacement{
+                5, 0,
+                LocationType::Pixels,
+                LocationType::Pixels},
             plot_color,
             thickness));
     plotting_canvas_->AddShape(
         std::make_shared<Ray>(
             point1,
-            gemini::Displacement{-5, 0,
-                                 LocationType::Pixels,
-                                 LocationType::Pixels},
+            gemini::Displacement{
+                -5, 0,
+                LocationType::Pixels,
+                LocationType::Pixels},
             plot_color,
             thickness));
 
@@ -170,17 +158,19 @@ void Figure::PlotErrorbars(
     plotting_canvas_->AddShape(
         std::make_shared<Ray>(
             point2,
-            gemini::Displacement{5, 0,
-                                 LocationType::Pixels,
-                                 LocationType::Pixels},
+            gemini::Displacement{
+                5, 0,
+                LocationType::Pixels,
+                LocationType::Pixels},
             plot_color,
             thickness));
     plotting_canvas_->AddShape(
         std::make_shared<Ray>(
             point2,
-            gemini::Displacement{-5, 0,
-                                 LocationType::Pixels,
-                                 LocationType::Pixels},
+            gemini::Displacement{
+                -5, 0,
+                LocationType::Pixels,
+                LocationType::Pixels},
             plot_color,
             thickness));
   }
@@ -188,7 +178,7 @@ void Figure::PlotErrorbars(
   if (!label.empty()) {
     legend_data_.push_back(LegendEntry{plot_color, label});
   }
-  updateColorPalette();
+  updateColorPalette(error_palette_index_);
 }
 
 void Figure::SetXRange(double xmin, double xmax) {
@@ -254,6 +244,8 @@ void Figure::ToFile(const std::string& filepath) {
 
     image_.Relation_Fix(plotting_canvas_, CanvasPart::Right, legend, CanvasPart::Left, 5);
     image_.Relation_Fix(legend, CanvasPart::Right, master, CanvasPart::Left, 5);
+    image_.Dimensions_Fix(legend, CanvasDimension::Width, 50);
+    image_.Dimensions_Fix(legend, CanvasDimension::Height, 50);
 
     auto text = std::make_shared<gemini::text::TextBox>(ttf_engine_);
     legend->AddShape(text);
@@ -379,9 +371,9 @@ Image& Figure::GetImage() {
   return image_;
 }
 
-void Figure::updateColorPalette() {
-  ++palette_index_;
-  if (color_palette_.size() <= palette_index_) {
-    palette_index_ = 0;
+void Figure::updateColorPalette(int& index) {
+  ++index;
+  if (color_palette_.size() <= index) {
+    index = 0;
   }
 }

@@ -67,6 +67,12 @@ struct GEMINI_EXPORT BezierCurve {
   //!     curve.Scale(factor).Translate(dx, dy)
   BezierCurve& ShiftScaled(double factor, double dx = 0., double dy = 0.);
 
+  //! \brief Reverses the order of all the points in each BezierCurve contour.
+  BezierCurve& ReverseWinding();
+
+  //! \brief Adds the contours of another BezierCurve to this one.
+  BezierCurve& Append(const BezierCurve& curve);
+
   // ============================================================================
   //  Static functions.
   // ============================================================================

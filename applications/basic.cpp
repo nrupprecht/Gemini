@@ -45,21 +45,12 @@ int main(int argc, char** argv) {
 
   {
     gemini::plot::ScatterPlotOptions options{};
-    options.marker = std::make_shared<gemini::plot::marker::Ex>();
+    options.marker = std::make_shared<gemini::plot::marker::Circle>();
     options.marker->SetScale(10.);
+    options.Color(gemini::core::color::Blue);
+    options.Label("Scatter plot");
     figure.Scatter(x, y8, options);
   }
-
-
-
-//  auto& image = figure.GetImage();
-//  auto text = std::make_shared<gemini::text::TextBox>(engine);
-//  text->SetFontSize(10);
-//  // text->SetAngle(gemini::math::PI / 2);
-//  text->SetAnchor(gemini::MakeRelativePoint(0., 0.10));
-//  text->AddText("To all those haters out there, I've just got to say, I don't have any time for you!");
-//  text->SetZOrder(5);
-//  image.GetMasterCanvas()->AddShape(text);
 
   figure.Title("Big Sample Graph");
   figure.ToFile("../../out/figure.bmp");

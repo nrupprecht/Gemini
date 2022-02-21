@@ -12,12 +12,11 @@ using namespace gemini::core;
 using namespace gemini::plot::marker;
 using namespace gemini::core::shapes;
 
-
-void Marker::PlaceMarker(const Point& center) {
+void Marker::PlaceMarker(const gemini::Point& center) {
   center_ = center;
 }
 
-void Marker::SetColor(const core::color::PixelColor& color) {
+void Marker::SetColor(const color::PixelColor& color) {
   color_ = color;
 }
 
@@ -61,33 +60,46 @@ void Marker::setToMirror(const std::shared_ptr<Marker>& marker) const {
 }
 
 // ==========================================================================================
-//  CircleMarker.
+//  Point.
 // ==========================================================================================
 
-CircleMarker::CircleMarker() {
-  marker_curve_ = core::shapes::BezierCurve{
-      {3}, {
+marker::Point::Point() {
+  marker_curve_ = BezierCurve::MakeSingleContourCurve(
+      {
           {-1, 0, false},
           {0, 1, false},
           {1, 0, false},
           {0, -1, false}
-      }
-  };
+      });
 }
 
 // ==========================================================================================
 //  CircleMarker.
 // ==========================================================================================
 
-DiamondMarker::DiamondMarker() {
-  marker_curve_ = core::shapes::BezierCurve{
-      {3}, {
+marker::Circle::Circle() {
+  marker_curve_ = BezierCurve::MakeSingleContourCurve(
+      {
+          {-1, 0, false},
+          {0, 1, false},
+          {1, 0, false},
+          {0, -1, false}
+      });
+  marker_curve_.Append(marker_curve_.Copy().ReverseWinding().Scale(0.8));
+}
+
+// ==========================================================================================
+//  Diamond.
+// ==========================================================================================
+
+Diamond::Diamond() {
+  marker_curve_ = BezierCurve::MakeSingleContourCurve(
+      {
           {-1, 0, true},
           {0, 1, true},
           {1, 0, true},
           {0, -1, true}
-      }
-  };
+      });
 }
 
 // ==========================================================================================

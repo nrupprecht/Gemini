@@ -114,7 +114,7 @@ class GEMINI_EXPORT Figure {
 
  private:
   //! \brief Switch to the next color in the palette.
-  void updateColorPalette();
+  void updateColorPalette(int& index);
 
   //! \brief The image the figure writes on.
   core::Image image_;
@@ -123,7 +123,9 @@ class GEMINI_EXPORT Figure {
   core::Canvas* plotting_canvas_;
 
   std::vector<core::color::PixelColor> color_palette_;
-  int palette_index_ = 0;
+  int plot_palette_index_ = 0;
+  int scatter_palette_index_ = 0;
+  int error_palette_index_ = 0;
 
   //! \brief A structure that stores some data about entries in a legend.
   struct LegendEntry {

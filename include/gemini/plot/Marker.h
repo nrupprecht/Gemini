@@ -54,8 +54,9 @@ class GEMINI_EXPORT Marker : public core::Shape {
 //  Define some default Markers classes.
 // ==========================================================================================
 
-MARKER_CLASS(CircleMarker);
-MARKER_CLASS(DiamondMarker);
+MARKER_CLASS(Point);
+MARKER_CLASS(Circle);
+MARKER_CLASS(Diamond);
 MARKER_CLASS(UpperTriangle);
 MARKER_CLASS(LowerTriangle);
 MARKER_CLASS(Square);
