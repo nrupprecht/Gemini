@@ -95,6 +95,9 @@ class GEMINI_EXPORT Figure {
   //! \brief Set the figure title.
   void Title(const std::string& title);
 
+  void XLabel(const std::string& xlabel);
+  void YLabel(const std::string& ylabel);
+
   void Plot(const std::vector<double>& x, const std::vector<double>& y, const std::string& label = "");
   void Scatter(const std::vector<double>& x, const std::vector<double>& y, const std::string& label = "");
   void Scatter(const std::vector<double>& x, const std::vector<double>& y, const ScatterPlotOptions& options);
@@ -129,7 +132,7 @@ class GEMINI_EXPORT Figure {
 
   //! \brief A structure that stores some data about entries in a legend.
   struct LegendEntry {
-    core::color::PixelColor color;
+    std::shared_ptr<marker::Marker> marker;
     std::string label;
   };
 
@@ -139,6 +142,11 @@ class GEMINI_EXPORT Figure {
   //! The plot title. Only used if non-empty.
   //! TODO: More options for the title, size, color, etc.
   std::string title_;
+
+  //! \brief The x-axis label. Only used if non-empty.
+  std::string xlabel_;
+  //! \brief The y-axis label. Only used if non-empty.
+  std::string ylabel_;
 
   std::shared_ptr<gemini::text::TrueTypeFontEngine> ttf_engine_;
 

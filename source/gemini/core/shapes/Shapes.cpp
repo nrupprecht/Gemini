@@ -290,13 +290,15 @@ void XiaolinWuThickLine::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) cons
 }
 
 void Ray::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
-  auto base_pixels = canvas->PointToPixels(base_, true);
+  auto base_pixels = canvas->PointToPixels(base_);
   auto ray_pixels = canvas->DisplacementToPixels(ray_);
 
+  // Starting point is relative to master, so ending point must be as well.
   auto end_point = Point{ base_pixels.x + ray_pixels.dx,
                           base_pixels.y + ray_pixels.dy,
                           LocationType::Pixels,
-                          LocationType::Pixels };
+                          LocationType::Pixels,
+                          true, true};
   XiaolinWuThickLine line(base_pixels, end_point, color_, thickness_);
   line.DrawOnBitmap(bitmap, canvas);
 }

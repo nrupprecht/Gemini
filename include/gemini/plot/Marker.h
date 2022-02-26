@@ -33,6 +33,7 @@ class GEMINI_EXPORT Marker : public core::Shape {
 
   core::shapes::BezierCurve marker_curve_;
 
+  //! \brief The marker scale.
   double scale_ = 5;
 
   core::color::PixelColor color_ = core::color::Black;
@@ -51,7 +52,7 @@ class GEMINI_EXPORT Marker : public core::Shape {
 }
 
 // ==========================================================================================
-//  Define some default Markers classes.
+//  Define some default simple Markers classes.
 // ==========================================================================================
 
 MARKER_CLASS(Point);
@@ -62,6 +63,7 @@ MARKER_CLASS(LowerTriangle);
 MARKER_CLASS(Square);
 MARKER_CLASS(Cross);
 MARKER_CLASS(Ex);
+MARKER_CLASS(Rectangle);
 
 }
 #endif //GEMINI_INCLUDE_GEMINI_PLOT_MARKER_H_

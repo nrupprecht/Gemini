@@ -218,7 +218,7 @@ void RasterBezierCurve(
     }
   }
 
-  for (auto&[y, crossings]: y_divisions) {
+  for (auto& [y, crossings]: y_divisions) {
     int count_wrapping = 0;
     std::sort(crossings.begin(), crossings.end());
     for (int i = 0; i < crossings.size() - 1;) {

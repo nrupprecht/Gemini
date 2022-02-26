@@ -9,6 +9,7 @@
 #include "gemini/core/shapes/Shapes.h"
 #include <filesystem>
 #include <iomanip>
+#include <filesystem>
 
 using namespace gemini;
 using namespace gemini::core;
@@ -23,12 +24,22 @@ Figure::Figure(int width, int height)
 
   // Set up the true type font engine. TODO: Don't hard code this.
   auto true_type = std::make_shared<gemini::text::TrueType>();
-  true_type->ReadTTF("/Users/nathaniel/Documents/times.ttf");
+  std::filesystem::path this_file = __FILE__;
+  auto font_file = this_file.parent_path().parent_path().parent_path().parent_path() / "fonts" / "times.ttf";
+  true_type->ReadTTF(font_file.string());
   auto engine = std::make_shared<gemini::text::TrueTypeFontEngine>(true_type, 20, 250);
 }
 
 void Figure::Title(const std::string& title) {
   title_ = title;
+}
+
+void Figure::XLabel(const std::string& xlabel) {
+  xlabel_ = xlabel;
+}
+
+void Figure::YLabel(const std::string& ylabel) {
+  ylabel_ = ylabel;
 }
 
 void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, const std::string& label) {
@@ -71,8 +82,13 @@ void Figure::Plot(const std::vector<double>& x, const std::vector<double>& y, co
     last_point = point;
   }
 
+  // TODO: Don't use markers, use lines. Maybe make legend data polymorphic with a "draw" method so not everything needs
+  //  to use markers.
   if (!label.empty()) {
-    legend_data_.push_back(LegendEntry{plot_color, label});
+    auto marker = std::make_shared<marker::Rectangle>();
+    marker->SetColor(plot_color);
+    marker->SetScale(10);
+    legend_data_.push_back(LegendEntry{std::move(marker), label});
   }
   updateColorPalette(plot_palette_index_);
 }
@@ -98,7 +114,9 @@ void Figure::Scatter(const std::vector<double>& x, const std::vector<double>& y,
   }
 
   if (!options.label.empty()) {
-    legend_data_.push_back(LegendEntry{plot_color, options.label});
+    auto marker = options.marker->Copy();
+    marker->SetColor(plot_color);
+    legend_data_.push_back(LegendEntry{std::move(marker), options.label});
   }
 
   // If a color was not specified, increment the color palette.
@@ -176,7 +194,10 @@ void Figure::PlotErrorbars(
   }
 
   if (!label.empty()) {
-    legend_data_.push_back(LegendEntry{plot_color, label});
+    auto marker = std::make_shared<marker::Point>();
+    marker->SetColor(plot_color);
+    marker->SetScale(10);
+    legend_data_.push_back(LegendEntry{std::move(marker), label});
   }
   updateColorPalette(error_palette_index_);
 }
@@ -240,15 +261,43 @@ void Figure::ToFile(const std::string& filepath) {
   // Check whether we need a legend.
   if (!legend_data_.empty()) {
     auto legend = plotting_canvas_->FloatingSubCanvas();
+    legend->SetBackground(color::White);
     auto master = image_.GetMasterCanvas();
 
-    image_.Relation_Fix(plotting_canvas_, CanvasPart::Right, legend, CanvasPart::Left, 5);
-    image_.Relation_Fix(legend, CanvasPart::Right, master, CanvasPart::Left, 5);
-    image_.Dimensions_Fix(legend, CanvasDimension::Width, 50);
-    image_.Dimensions_Fix(legend, CanvasDimension::Height, 50);
+    // RIGHT edge of plotting canvas + 15 = LEFT edge of legend canvas
+    image_.Relation_Fix(plotting_canvas_, CanvasPart::Right, legend, CanvasPart::Left, +15);
 
-    auto text = std::make_shared<gemini::text::TextBox>(ttf_engine_);
-    legend->AddShape(text);
+    // RIGHT edge of legend canvas + 25 = RIGHT edge of master canvas
+    image_.Relation_Fix(legend, CanvasPart::Right, master, CanvasPart::Right, 25);
+
+    // CENTER Y of the legend = CENTER Y of the plotting canvas
+    image_.Relation_Fix(legend, CanvasPart::CenterY, plotting_canvas_, CanvasPart::CenterY);
+
+    auto num_legend_entries = legend_data_.size();
+    double spacing = 25.;
+    auto legend_height = spacing * (static_cast<double>(num_legend_entries) + 0.5);
+
+    // FOR TESTING: Legend is 300 x 500
+    image_.Dimensions_Fix(legend, CanvasDimension::Width, 300);
+    image_.Dimensions_Fix(legend, CanvasDimension::Height, legend_height);
+
+    double y = legend_height - 25;
+    for (auto& detail: legend_data_) {
+      // Add marker or line.
+      if (detail.marker) {
+        detail.marker->PlaceMarker(MakePixelPoint(10, y + 0.25 * spacing));
+        legend->AddShape(detail.marker);
+      }
+
+      // Add text.
+      auto text = std::make_shared<gemini::text::TextBox>(ttf_engine_);
+      text->AddText(detail.label);
+      text->SetAnchor(MakePixelPoint(30, y));
+      text->SetFontSize(7);
+      legend->AddShape(text);
+
+      y -= spacing;
+    }
   }
   else {
     image_.Relation_Fix(0, CanvasPart::Right, 1, CanvasPart::Right, -15);
@@ -270,10 +319,33 @@ void Figure::ToFile(const std::string& filepath) {
     image_.Relation_Fix(0, CanvasPart::Top, 1, CanvasPart::Top, -15);
   }
 
-  image_.Relation_Fix(0, CanvasPart::Left, 1, CanvasPart::Left, 64);
+  int left_side_buffer = 64, bottom_side_buffer = 64;
+
+  // Check whether we need a x-axis label.
+  if (!xlabel_.empty()) {
+    bottom_side_buffer += 20;
+    auto label = std::make_shared<text::TextBox>(ttf_engine_);
+    label->AddText(xlabel_);
+    label->SetFontSize(8);
+    label->SetAnchor(gemini::Point{0.5, 10, LocationType::Proportional, LocationType::Pixels});
+    image_.GetMasterCanvas()->AddShape(label);
+  }
+  // Check whether we need a y-axis label.
+  if (!ylabel_.empty()) {
+    left_side_buffer += 20;
+    auto label = std::make_shared<text::TextBox>(ttf_engine_);
+    label->AddText(ylabel_);
+    label->SetFontSize(8);
+    label->SetAngle(0.5 * math::PI);
+    label->SetAnchor(gemini::Point{25, 0.5, LocationType::Pixels, LocationType::Proportional});
+    image_.GetMasterCanvas()->AddShape(label);
+  }
+
+  // Left edge of master canvas + 64 = Left edge of plotting canvas
+  image_.Relation_Fix(0, CanvasPart::Left, 1, CanvasPart::Left, left_side_buffer);
   // image_.Relation_Fix(0, CanvasPart::Right, 1, CanvasPart::Right, -15);
 
-  image_.Relation_Fix(0, CanvasPart::Bottom, 1, CanvasPart::Bottom, 64);
+  image_.Relation_Fix(0, CanvasPart::Bottom, 1, CanvasPart::Bottom, bottom_side_buffer);
 
   // Create any plot axis ticks and numbering.
   auto coordinates = image_.GetCanvasCoordinateDescription(plotting_canvas_);

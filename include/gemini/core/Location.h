@@ -17,8 +17,12 @@ enum class GEMINI_EXPORT LocationType {
 struct GEMINI_EXPORT Point {
   double x = std::numeric_limits<double>::quiet_NaN();
   double y = std::numeric_limits<double>::quiet_NaN();
+
   LocationType type_x = LocationType::Pixels;
   LocationType type_y = LocationType::Pixels;
+
+  bool relative_to_master_x = false;
+  bool relative_to_master_y = false;
 };
 
 inline GEMINI_EXPORT Point MakeCoordinatePoint(double x, double y) {

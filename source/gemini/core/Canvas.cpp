@@ -386,8 +386,10 @@ const color::PixelColor& Canvas::GetBackgroundColor() const {
   return background_color_;
 }
 
-Point Canvas::PointToPixels(const Point& point, bool relative_to_canvas) const {
+Point Canvas::PointToPixels(const Point& point) const {
   Point pixel_point{};
+  // Make sure the pixel point is relative to master.
+  pixel_point.relative_to_master_x = pixel_point.relative_to_master_y = true;
 
   auto& location = image_->canvas_locations_.find(this)->second;
 
@@ -433,8 +435,10 @@ Point Canvas::PointToPixels(const Point& point, bool relative_to_canvas) const {
     }
   }
 
-  if (!relative_to_canvas) {
+  if (!point.relative_to_master_x) {
     pixel_point.x += location.left;
+  }
+  if (!point.relative_to_master_y) {
     pixel_point.y += location.bottom;
   }
 

@@ -35,22 +35,24 @@ int main(int argc, char** argv) {
 
     err[i] = 0.1;
   }
-  figure.Plot(x, y1);
+  figure.Plot(x, y1, "First plot");
   figure.Plot(x, y2);
-  figure.Plot(x, y3);
+  figure.Plot(x, y3, "Third plot");
   figure.Plot(x, y4);
   figure.Plot(x, y5);
   figure.Plot(x, y6);
-  figure.PlotErrorbars(x, y7, err);
+  figure.PlotErrorbars(x, y7, err, "Error bars");
 
   {
     gemini::plot::ScatterPlotOptions options{};
     options.marker = std::make_shared<gemini::plot::marker::Circle>();
     options.marker->SetScale(10.);
     options.Color(gemini::core::color::Blue);
-    options.Label("Scatter plot");
-    figure.Scatter(x, y8, options);
+    figure.Scatter(x, y8, options.Label("Scatter!"));
   }
+
+  figure.XLabel("My x axis");
+  figure.YLabel("And a y-axis");
 
   figure.Title("Big Sample Graph");
   figure.ToFile("../../out/figure.bmp");

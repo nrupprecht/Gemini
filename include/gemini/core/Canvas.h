@@ -34,6 +34,10 @@ enum class GEMINI_EXPORT CanvasPart {
   Left, Right, Bottom, Top, CenterX, CenterY
 };
 
+enum class GEMINI_EXPORT CanvasDimension {
+  Width, Height
+};
+
 //! \brief Represents a relationship between two canvases.
 struct FixRelationship {
   FixRelationship(int c1_num, int c2_num, CanvasPart c1_part, CanvasPart c2_part, double px_diff)
@@ -46,6 +50,18 @@ struct FixRelationship {
   int canvas1_num, canvas2_num;
   CanvasPart canvas1_part, canvas2_part;
   double pixels_diff;
+};
+
+//! \brief Represents a specified canvas has a fixed width or height.
+struct FixDimensions {
+  FixDimensions(int c_num, CanvasDimension dim, double len)
+      : canvas_num(c_num)
+      , dimension(dim)
+      , extent(len) {}
+
+  int canvas_num;
+  CanvasDimension dimension;
+  double extent;
 };
 
 // Forward declare canvas
@@ -88,6 +104,11 @@ class GEMINI_EXPORT Image {
       Canvas* canvas2,
       CanvasPart canvas2_part,
       double pixels_diff = 0.);
+
+  void Dimensions_Fix(
+      Canvas* canvas,
+      CanvasDimension dim,
+      double extent);
 
   //! \brief Clear all relationships.
   void ClearRelationships();
@@ -144,6 +165,7 @@ class GEMINI_EXPORT Image {
   std::vector<Canvas*> canvases_;
 
   std::vector<FixRelationship> canvas_fixes_;
+  std::vector<FixDimensions> canvas_dimensions_fixes_;
 
   //! \brief What coordinate system width to use if there is no coordinate extent in the x or y dimensions.
   //! This can happen either because there is only one point that needs coordinates in x or y, or because, e.g. the
@@ -191,7 +213,7 @@ class GEMINI_EXPORT Canvas {
 
   NO_DISCARD const color::PixelColor& GetBackgroundColor() const;
 
-  NO_DISCARD Point PointToPixels(const Point& point, bool relative_to_canvas = false) const;
+  NO_DISCARD Point PointToPixels(const Point& point) const;
   NO_DISCARD Displacement DisplacementToPixels(const Displacement& displacement) const;
 
  protected:
