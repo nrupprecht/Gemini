@@ -11,17 +11,115 @@ using namespace gemini;
 using namespace gemini::core;
 using Eigen::MatrixXd;
 
-Image::Image()
+class Image::Impl {
+  friend class Canvas;
+
+ public:
+  Impl();
+  Impl(int width, int height);
+
+  void Relation_Fix(
+      int canvas1_num,
+      CanvasPart canvas1_part,
+      int canvas2_num,
+      CanvasPart canvas2_part,
+      double pixels_diff = 0.);
+
+  void Relation_Fix(
+      Canvas* canvas1,
+      CanvasPart canvas1_part,
+      Canvas* canvas2,
+      CanvasPart canvas2_part,
+      double pixels_diff = 0.);
+
+  void Dimensions_Fix(
+      Canvas* canvas,
+      CanvasDimension dim,
+      double extent);
+
+  void ClearRelationships();
+
+  std::shared_ptr<Canvas> GetMasterCanvas();
+
+  const CanvasLocation& GetLocation(const Canvas* canvas) const;
+
+  int GetWidth() const;
+  int GetHeight() const;
+
+  NO_DISCARD Bitmap ToBitmap() const;
+
+  void CalculateImage() const;
+
+  void CalculateCanvasLocations() const;
+
+  void CalculateCanvasCoordinates() const;
+
+  const CoordinateDescription& GetCanvasCoordinateDescription(const std::shared_ptr<const Canvas>& canvas) const;
+
+  void RegisterCanvas(const std::shared_ptr<Canvas>& canvas);
+
+ protected:
+
+  //! \brief Determine the maximum and minimum coordinate points of a canvas in the x and y directions.
+  //!
+  //! If there are no objects with coordinates in x or y, those max/min coordinates will be quiet NaNs.
+  static std::array<double, 4> getMinMaxCoordinates(Canvas* canvas);
+  void describeCoordinates(class Canvas* canvas, const std::array<double, 4>& min_max_coords) const;
+
+  ///========================================================================
+  /// Protected variables.
+  ///========================================================================
+
+  //! \brief Brief the "master" canvas. This represents the surface of the entire image.
+  //!
+  //! All canvases for the image will either be this canvas, or a child (grandchild, etc.) canvas of this canvas.
+  std::shared_ptr<Canvas> master_canvas_ = nullptr;
+
+  //! \brief A vector of all the canvas that are associated with this image.
+  //!
+  //! This will include the master_canvas_, its children, their children, etc.
+  std::vector<std::shared_ptr<Canvas>> canvases_;
+
+  std::vector<FixRelationship> canvas_fixes_;
+  std::vector<FixDimensions> canvas_dimensions_fixes_;
+
+  //! \brief What coordinate system width to use if there is no coordinate extent in the x or y dimensions.
+  //! This can happen either because there is only one point that needs coordinates in x or y, or because, e.g. the
+  //! x dimension has coordinate objects, but the y dimension does not. So a coordinate system is still used in the y
+  //! dimension [NOTE(Nate): separate the ability to have coordinate systems for x and y?].
+  double default_coordinate_epsilon = 0.0001;
+
+  //! \brief Determines the sizes and locations of each canvas.
+  mutable std::map<const Canvas*, CanvasLocation> canvas_locations_;
+
+  //! \brief Describes whether each canvas has a coordinate description, and if so, what it is.
+  mutable std::map<const Canvas*, CoordinateDescription> canvas_coordinate_description_;
+
+  //! \brief True whenever canvases and image parameters may need to be recalculated.
+  mutable bool needs_calculate_ = false;
+
+  //! \brief Store the width and heigh of the whole image, in pixels.
+  //!
+  //! Since the final image will (at least in e.g. the bitmap case) be in pixels, we store these as ints, not as doubles.
+  mutable int width_ = 100, height_ = 100;
+};
+
+
+// ==========================================================================================
+//  Image::Impl.
+// ==========================================================================================
+
+Image::Impl::Impl()
     : master_canvas_(new Canvas(this)) {
-  registerCanvas(master_canvas_);
+  RegisterCanvas(master_canvas_);
 }
 
-Image::Image(int width, int height)
+Image::Impl::Impl(int width, int height)
     : master_canvas_(new Canvas(this)), width_(width), height_(height) {
-  registerCanvas(master_canvas_);
+  RegisterCanvas(master_canvas_);
 }
 
-void Image::Relation_Fix(
+void Image::Impl::Relation_Fix(
     int canvas1_num,
     CanvasPart canvas1_part,
     int canvas2_num,
@@ -30,18 +128,20 @@ void Image::Relation_Fix(
   canvas_fixes_.emplace_back(canvas1_num, canvas2_num, canvas1_part, canvas2_part, pixels_diff);
 }
 
-void Image::Relation_Fix(
+void Image::Impl::Relation_Fix(
     Canvas* canvas1,
     CanvasPart canvas1_part,
     Canvas* canvas2,
     CanvasPart canvas2_part,
     double pixels_diff) {
-  auto it1 = std::find_if(canvases_.begin(), canvases_.end(), [=](auto& ptr) {
-    return ptr.get() == canvas1;
-  });
-  auto it2 = std::find_if(canvases_.begin(), canvases_.end(), [=](auto& ptr) {
-    return ptr.get() == canvas2;
-  });
+  auto it1 = std::find_if(
+      canvases_.begin(), canvases_.end(), [=](auto& ptr) {
+        return ptr.get() == canvas1;
+      });
+  auto it2 = std::find_if(
+      canvases_.begin(), canvases_.end(), [=](auto& ptr) {
+        return ptr.get() == canvas2;
+      });
   GEMINI_REQUIRE(it1 != canvases_.end(), "could not find first canvas");
   GEMINI_REQUIRE(it2 != canvases_.end(), "could not find second canvas");
 
@@ -49,43 +149,44 @@ void Image::Relation_Fix(
   Relation_Fix(static_cast<int>(index1), canvas1_part, static_cast<int>(index2), canvas2_part, pixels_diff);
 }
 
-void Image::Dimensions_Fix(
+void Image::Impl::Dimensions_Fix(
     Canvas* canvas,
     CanvasDimension dim,
     double extent) {
-  auto it = std::find_if(canvases_.begin(), canvases_.end(), [=](auto& ptr) {
-    return ptr.get() == canvas;
-  });
+  auto it = std::find_if(
+      canvases_.begin(), canvases_.end(), [=](auto& ptr) {
+        return ptr.get() == canvas;
+      });
   GEMINI_REQUIRE(it != canvases_.end(), "could not find the canvas");
   auto index = std::distance(canvases_.begin(), it);
 
   canvas_dimensions_fixes_.emplace_back(index, dim, extent);
 }
 
-void Image::ClearRelationships() {
+void Image::Impl::ClearRelationships() {
   canvas_fixes_.clear();
 }
 
-std::shared_ptr<Canvas> Image::GetMasterCanvas() {
+std::shared_ptr<Canvas> Image::Impl::GetMasterCanvas() {
   return master_canvas_;
 }
 
-const CanvasLocation& Image::GetLocation(const Canvas* canvas) const {
+const CanvasLocation& Image::Impl::GetLocation(const Canvas* canvas) const {
   if (auto it = canvas_locations_.find(canvas); it != canvas_locations_.end()) {
     return it->second;
   }
   GEMINI_FAIL("could not find specified canvas in the image");
 }
 
-int Image::GetWidth() const {
+int Image::Impl::GetWidth() const {
   return width_;
 }
 
-int Image::GetHeight() const {
+int Image::Impl::GetHeight() const {
   return height_;
 }
 
-Bitmap Image::ToBitmap() const {
+Bitmap Image::Impl::ToBitmap() const {
   Bitmap output(width_, height_);
 
   if (needs_calculate_) {
@@ -95,7 +196,7 @@ Bitmap Image::ToBitmap() const {
   return output;
 }
 
-void Image::CalculateImage() const {
+void Image::Impl::CalculateImage() const {
   // Determine which canvases need coordinate systems.
   CalculateCanvasCoordinates();
 
@@ -105,7 +206,7 @@ void Image::CalculateImage() const {
   needs_calculate_ = false;
 }
 
-void Image::CalculateCanvasLocations() const {
+void Image::Impl::CalculateCanvasLocations() const {
   // Master canvas always takes up all the image space.
   canvas_locations_[master_canvas_.get()] = {0, 0, width_, height_};
 
@@ -225,7 +326,7 @@ void Image::CalculateCanvasLocations() const {
   }
 }
 
-void Image::CalculateCanvasCoordinates() const {
+void Image::Impl::CalculateCanvasCoordinates() const {
   // Check which, if any, canvases need coordinate systems. If so, determine what they should be.
   for (const auto& canvas: canvases_) {
     // Get coordinates, if there are any. A lack of coordinates is signaled by quiet NaN.
@@ -235,14 +336,14 @@ void Image::CalculateCanvasCoordinates() const {
   }
 }
 
-const CoordinateDescription& Image::GetCanvasCoordinateDescription(const std::shared_ptr<const Canvas>& canvas) const {
+const CoordinateDescription& Image::Impl::GetCanvasCoordinateDescription(const std::shared_ptr<const Canvas>& canvas) const {
   if (auto it = canvas_coordinate_description_.find(canvas.get()); it != canvas_coordinate_description_.end()) {
     return it->second;
   }
   GEMINI_FAIL("the canvas was not a member of this image");
 }
 
-void Image::registerCanvas(const std::shared_ptr<Canvas>& canvas) {
+void Image::Impl::RegisterCanvas(const std::shared_ptr<Canvas>& canvas) {
   if (!canvas) {
     return;
   }
@@ -256,7 +357,7 @@ void Image::registerCanvas(const std::shared_ptr<Canvas>& canvas) {
   canvas->image_ = this;
 }
 
-std::array<double, 4> Image::getMinMaxCoordinates(class Canvas* canvas) {
+std::array<double, 4> Image::Impl::getMinMaxCoordinates(class Canvas* canvas) {
   // Check if any object uses coordinates.
   double min_coordinate_x = std::numeric_limits<double>::quiet_NaN();
   double max_coordinate_x = std::numeric_limits<double>::quiet_NaN();
@@ -282,7 +383,7 @@ std::array<double, 4> Image::getMinMaxCoordinates(class Canvas* canvas) {
   return {min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y};
 }
 
-void Image::describeCoordinates(Canvas* canvas, const std::array<double, 4>& min_max_coords) const {
+void Image::Impl::describeCoordinates(Canvas* canvas, const std::array<double, 4>& min_max_coords) const {
   auto&[min_coordinate_x, max_coordinate_x, min_coordinate_y, max_coordinate_y] = min_max_coords;
 
   // Check whether there were any coordinates in either x or y.
@@ -358,9 +459,89 @@ void Image::describeCoordinates(Canvas* canvas, const std::array<double, 4>& min
   }
 }
 
+// ==========================================================================================
+//  Image.
+// ==========================================================================================
+
+Image::Image()
+    : impl_(std::make_shared<Impl>()) {}
+
+Image::Image(int width, int height)
+    : impl_(std::make_shared<Impl>(width, height)) {}
+
+void Image::Relation_Fix(
+    int canvas1_num,
+    CanvasPart canvas1_part,
+    int canvas2_num,
+    CanvasPart canvas2_part,
+    double pixels_diff) {
+  impl_->Relation_Fix(canvas1_num, canvas1_part, canvas2_num, canvas2_part, pixels_diff);
+}
+
+void Image::Relation_Fix(
+    Canvas* canvas1,
+    CanvasPart canvas1_part,
+    Canvas* canvas2,
+    CanvasPart canvas2_part,
+    double pixels_diff) {
+  impl_->Relation_Fix(canvas1, canvas1_part, canvas2, canvas2_part, pixels_diff);
+}
+
+void Image::Dimensions_Fix(
+    Canvas* canvas,
+    CanvasDimension dim,
+    double extent) {
+  impl_->Dimensions_Fix(canvas, dim, extent);
+}
+
+void Image::ClearRelationships() {
+  impl_->ClearRelationships();
+}
+
+std::shared_ptr<Canvas> Image::GetMasterCanvas() {
+  return impl_->GetMasterCanvas();
+}
+
+const CanvasLocation& Image::GetLocation(const Canvas* canvas) const {
+  return impl_->GetLocation(canvas);
+}
+
+int Image::GetWidth() const {
+  return impl_->GetWidth();
+}
+
+int Image::GetHeight() const {
+  return impl_->GetHeight();
+}
+
+Bitmap Image::ToBitmap() const {
+  return impl_->ToBitmap();
+}
+
+void Image::CalculateImage() const {
+  impl_->CalculateImage();
+}
+
+void Image::CalculateCanvasLocations() const {
+  impl_->CalculateCanvasLocations();
+}
+
+void Image::CalculateCanvasCoordinates() const {
+  impl_->CalculateCanvasCoordinates();
+}
+
+const CoordinateDescription& Image::GetCanvasCoordinateDescription(const std::shared_ptr<const Canvas>& canvas) const {
+  return impl_->GetCanvasCoordinateDescription(canvas);
+}
+
+
+// ==========================================================================================
+//  Canvas.
+// ==========================================================================================
+
 std::shared_ptr<Canvas> Canvas::FloatingSubCanvas() {
   auto sub_canvas = std::shared_ptr<Canvas>(new Canvas(this));
-  image_->registerCanvas(sub_canvas);
+  image_->RegisterCanvas(sub_canvas);
   child_canvases_.push_back(sub_canvas);
 
   return sub_canvas;
