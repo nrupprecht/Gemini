@@ -11,6 +11,7 @@
 #include <vector>
 #include <map>
 #include <array>
+#include <deque>
 
 namespace gemini::core {
 
@@ -78,7 +79,7 @@ class GEMINI_EXPORT Image {
   Image(int width, int height);
 
   //! \brief Clean up all the canvases.
-  ~Image();
+  virtual ~Image() = default;
 
   //! \brief Describe a relationship between two canvases that are children of this image.
   //!
@@ -117,7 +118,7 @@ class GEMINI_EXPORT Image {
   //!
   //! I'm returning a pointer to the canvas since this makes it harder to forget to get the returned canvas
   //! by reference and only set a copy, which is not generally the intended behavior.
-  class Canvas* GetMasterCanvas();
+  std::shared_ptr<Canvas> GetMasterCanvas();
 
   //! \brief Get the location of one of the Image's canvases.
   const CanvasLocation& GetLocation(const Canvas* canvas) const;
@@ -138,11 +139,11 @@ class GEMINI_EXPORT Image {
   void CalculateCanvasCoordinates() const;
 
   //! \brief Get the coordinate description of a canvas.
-  const CoordinateDescription& GetCanvasCoordinateDescription(Canvas* canvas) const;
+  const CoordinateDescription& GetCanvasCoordinateDescription(const std::shared_ptr<const Canvas>& canvas) const;
 
  protected:
   //! \brief Add a canvas to the image. Also adds entries for storing the canvas locations and canvas coordinate system.
-  void registerCanvas(Canvas* canvas);
+  void registerCanvas(const std::shared_ptr<Canvas>& canvas);
 
   //! \brief Determine the maximum and minimum coordinate points of a canvas in the x and y directions.
   //!
@@ -157,12 +158,12 @@ class GEMINI_EXPORT Image {
   //! \brief Brief the "master" canvas. This represents the surface of the entire image.
   //!
   //! All canvases for the image will either be this canvas, or a child (grandchild, etc.) canvas of this canvas.
-  Canvas* master_canvas_ = nullptr;
+  std::shared_ptr<Canvas> master_canvas_ = nullptr;
 
   //! \brief A vector of all the canvas that are associated with this image.
   //!
   //! This will include the master_canvas_, its children, their children, etc.
-  std::vector<Canvas*> canvases_;
+  std::vector<std::shared_ptr<Canvas>> canvases_;
 
   std::vector<FixRelationship> canvas_fixes_;
   std::vector<FixDimensions> canvas_dimensions_fixes_;
@@ -193,7 +194,7 @@ class GEMINI_EXPORT Canvas {
 
  public:
   //! \brief Get a floating subcanvas of this canvas.
-  Canvas* FloatingSubCanvas();
+  std::shared_ptr<Canvas> FloatingSubCanvas();
 
   //! \brief Add a line on a canvas.
   void AddShape(std::shared_ptr<Shape> shape);
@@ -255,12 +256,13 @@ class GEMINI_EXPORT Canvas {
   //! \brief The parent canvas for this canvas. Null if this is the top level canvas.
   Canvas* parent_ = nullptr;
 
-  std::vector<Canvas*> child_canvases_;
+  //! \brief Keep as a deque so references and pointers are not invalidated.
+  std::deque<std::shared_ptr<Canvas>> child_canvases_;
 
   //! \brief Describes the coordinate system of the canvas, if any.
   CanvasCoordinates coordinate_system_;
 
-  //! \brief The image that this canvas belongs to.
+  //! \brief The image that this canvas belongs to. You belong to the same image as your parent.
   Image* image_;
 };
 

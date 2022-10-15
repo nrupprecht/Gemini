@@ -10,9 +10,59 @@
 
 namespace gemini {
 
+using Byte = unsigned char;
+
 enum class GEMINI_EXPORT LocationType {
   Proportional, Coordinate, Pixels
 };
+
+// TODO: Switch to using flags?
+
+enum LocationTypeFlags : unsigned char {
+  PixelsX       = 0b00000001,
+  CoordinatesX  = 0b00000010,
+  ProportionalX = 0b00000100,
+  RelativeX     = 0b00001000,
+  PixelsY       = 0b00010000,
+  CoordinatesY  = 0b00100000,
+  ProportionalY = 0b01000000,
+  RelativeY     = 0b10000000,
+};
+
+inline bool IsPixelsX(Byte flags) {
+  return PixelsX & flags;
+}
+
+inline bool IsCoordinatesX(Byte flags) {
+  return CoordinatesX & flags;
+}
+
+inline bool IsProportionalX(Byte flags) {
+  return ProportionalX & flags;
+}
+
+inline bool IsRelativeX(Byte flags) {
+  return RelativeX & flags;
+}
+
+inline bool IsPixelsY(Byte flags) {
+  return PixelsY & flags;
+}
+
+inline bool IsCoordinatesY(Byte flags) {
+  return CoordinatesY & flags;
+}
+
+inline bool IsProportionalY(Byte flags) {
+  return ProportionalY & flags;
+}
+
+inline bool IsRelativeY(Byte flags) {
+  return RelativeY & flags;
+}
+
+// --> End speculative section.
+
 
 struct GEMINI_EXPORT Point {
   double x = std::numeric_limits<double>::quiet_NaN();

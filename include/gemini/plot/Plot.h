@@ -123,7 +123,7 @@ class GEMINI_EXPORT Figure {
   core::Image image_;
 
   //! \brief The canvas on which the main plotting occurs.
-  core::Canvas* plotting_canvas_;
+  std::shared_ptr<core::Canvas> plotting_canvas_;
 
   std::vector<core::color::PixelColor> color_palette_;
   int plot_palette_index_ = 0;

@@ -2,7 +2,7 @@
 // Created by Nathaniel Rupprecht on 11/26/21.
 //
 
-#include <gemini/core/Location.h>
+#include "gemini/core/Location.h"
 #include "gemini/plot/Plot.h"
 // Other files.
 #include "gemini/text/TextBox.h"
@@ -265,21 +265,21 @@ void Figure::ToFile(const std::string& filepath) {
     auto master = image_.GetMasterCanvas();
 
     // RIGHT edge of plotting canvas + 15 = LEFT edge of legend canvas
-    image_.Relation_Fix(plotting_canvas_, CanvasPart::Right, legend, CanvasPart::Left, +15);
+    image_.Relation_Fix(plotting_canvas_.get(), CanvasPart::Right, legend.get(), CanvasPart::Left, +15);
 
     // RIGHT edge of legend canvas + 25 = RIGHT edge of master canvas
-    image_.Relation_Fix(legend, CanvasPart::Right, master, CanvasPart::Right, 25);
+    image_.Relation_Fix(legend.get(), CanvasPart::Right, master.get(), CanvasPart::Right, 25);
 
     // CENTER Y of the legend = CENTER Y of the plotting canvas
-    image_.Relation_Fix(legend, CanvasPart::CenterY, plotting_canvas_, CanvasPart::CenterY);
+    image_.Relation_Fix(legend.get(), CanvasPart::CenterY, plotting_canvas_.get(), CanvasPart::CenterY);
 
     auto num_legend_entries = legend_data_.size();
     double spacing = 25.;
     auto legend_height = spacing * (static_cast<double>(num_legend_entries) + 0.5);
 
     // FOR TESTING: Legend is 300 x 500
-    image_.Dimensions_Fix(legend, CanvasDimension::Width, 300);
-    image_.Dimensions_Fix(legend, CanvasDimension::Height, legend_height);
+    image_.Dimensions_Fix(legend.get(), CanvasDimension::Width, 300);
+    image_.Dimensions_Fix(legend.get(), CanvasDimension::Height, legend_height);
 
     double y = legend_height - 25;
     for (auto& detail: legend_data_) {

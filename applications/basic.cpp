@@ -12,29 +12,69 @@
 
 using namespace gemini::plot;
 
+std::vector<double> Map(const std::function<double(double)>& f, double x0, double x1, std::size_t num_points = 100) {
+  if (num_points == 0) {
+    return {};
+  }
+  if (num_points == 1) {
+    return {f(0.5 * (x0 + x1))};
+  }
+
+  std::vector<double> output;
+
+  double dx = (x1 - x0) / static_cast<double>(num_points - 1);
+  for (std::size_t i = 0; i < num_points - 1; ++i) {
+    auto x = x0 + static_cast<double>(i) * dx;
+    output.push_back(f(x));
+  }
+  output.push_back(f(x1));
+
+  return output;
+}
+
+std::vector<double> Map(const std::function<double(double)>& f, const std::vector<double>& x) {
+  std::vector<double> output(x.size());
+  std::transform(x.begin(), x.end(), output.begin(), f);
+  return output;
+}
+
+std::vector<double> Linspace(double x0, double x1, std::size_t num_points) {
+  if (num_points == 0) {
+    return {};
+  }
+  if (num_points == 1) {
+    return {0.5 * (x0 + x1)};
+  }
+
+  std::vector<double> output;
+  double dx = (x1 - x0) / static_cast<double>(num_points - 1);
+  for (std::size_t i = 0; i < num_points - 1; ++i) {
+    auto x = x0 + static_cast<double>(i) * dx;
+    output.push_back(x);
+  }
+  output.push_back(x1);
+
+  return output;
+}
+
 int main(int argc, char** argv) {
   gemini::plot::Figure figure(2048, 1024);
 
-  int npoints = 100;
-  std::vector<double> x(npoints);
-  std::vector<double> y1(npoints), y2(npoints), y3(npoints), y4(npoints), y5(npoints), y6(npoints), y7(npoints),
-      y8(npoints);
-  std::vector<double> err(npoints);
-
   auto PI = 3.14159265;
-  for (int i = 0; i < npoints; ++i) {
-    x[i] = 2. * PI / npoints * i;
-    y1[i] = std::sin(x[i]);
-    y2[i] = std::sin(x[i] - 0.1 * PI);
-    y3[i] = std::sin(x[i] - 0.2 * PI);
-    y4[i] = std::sin(x[i] - 0.3 * PI);
-    y5[i] = std::sin(x[i] - 0.4 * PI);
-    y6[i] = std::sin(x[i] - 0.5 * PI);
-    y7[i] = std::sin(x[i] - 0.6 * PI);
-    y8[i] = std::sin(x[i] - 0.7 * PI);
 
-    err[i] = 0.1;
-  }
+  int npoints = 100;
+
+  auto x = Linspace(0, 2 * PI, npoints);
+  auto y1 = Map([=](double x) { return std::sin(x);}, x);
+  auto y2 = Map([=](double x) { return std::sin(x - 0.1 * PI);}, x);
+  auto y3 = Map([=](double x) { return std::sin(x - 0.2 * PI);}, x);
+  auto y4 = Map([=](double x) { return std::sin(x - 0.3 * PI);}, x);
+  auto y5 = Map([=](double x) { return std::sin(x - 0.4 * PI);}, x);
+  auto y6 = Map([=](double x) { return std::sin(x - 0.5 * PI);}, x);
+  auto y7 = Map([=](double x) { return std::sin(x - 0.6 * PI);}, x);
+  auto y8 = Map([=](double x) { return std::sin(x - 0.7 * PI);}, x);
+  std::vector<double> err(npoints, 0.1);
+
   figure.Plot(x, y1, "First plot");
   figure.Plot(x, y2);
   figure.Plot(x, y3, "Third plot");

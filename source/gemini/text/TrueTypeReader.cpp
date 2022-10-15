@@ -43,7 +43,7 @@ void PrintTableIndex(std::ostream& out, const TrueType& font) {
 } // namespace gemini::text
 
 
-void TrueType::ReadTTF(const std::string &filename) {
+void TrueType::ReadTTF(const std::string& filename) {
   std::ifstream fin(filename);
 
   if (fin.fail()) {
@@ -51,7 +51,7 @@ void TrueType::ReadTTF(const std::string &filename) {
   }
 
   // Read in the entire file.
-  std::copy(std::istreambuf_iterator<char>(fin),std::istreambuf_iterator<char>(), std::back_inserter(file_));
+  std::copy(std::istreambuf_iterator<char>(fin), std::istreambuf_iterator<char>(), std::back_inserter(file_));
   fin.close();
 
   // Read initial data.
@@ -352,7 +352,7 @@ void TrueType::readGLYFTable() {
     //    If a glyph has no outline, then loca[n] = loca [n+1]."
     if (offset == loca_table_.entries[i + 1]) {
       glyf_table_.entries.emplace_back(
-          GlyphData{ 0, 0, 0, 0, 0});
+          GlyphData{0, 0, 0, 0, 0});
       continue;
     }
 
@@ -413,7 +413,7 @@ void TrueType::readGLYFTable() {
 
         flags.push_back(flag);
         // Create an entry for the point, set the is_on_curve data now.
-        glyph.spline.points.push_back({ 0, 0, static_cast<bool>(ON_CURVE_POINT & flag) });
+        glyph.spline.points.push_back({0, 0, static_cast<bool>(ON_CURVE_POINT & flag)});
 
         // This should be set on the first entry if it is used.
         if (OVERLAP_SIMPLE & flag) {
@@ -616,8 +616,6 @@ TrueType::Format4Data TrueType::parseFormat4() {
 
   return format;
 }
-
-
 
 struct UnicodeRange {
   //! \brief First unicode value in this range.
