@@ -24,7 +24,7 @@ class Project(ConanFile):
 
     def requirements(self):
         """ List all required conan packages here. """
-        # self.requires("gtest/1.10.0")
+        self.requires("gtest/1.11.0")
         self.requires("eigen/3.4.0")
         pass
 

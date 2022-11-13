@@ -5,7 +5,7 @@
 #ifndef QPP_TESTING_H
 #define QPP_TESTING_H
 
-//#include "gmock/gmock.h"
-//#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #endif //QPP_TESTING_H

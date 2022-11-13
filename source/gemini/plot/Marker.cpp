@@ -25,25 +25,27 @@ void Marker::SetScale(double scale) {
 }
 
 CoordinateBoundingBox Marker::GetBoundingBox() const {
-//  CoordinateBoundingBox bounding_box;
-//  for (auto& p : marker_curve_.points) {
-//    auto x = p.x, y = p.y;
-//    if (std::isnan(bounding_box.left) || x < bounding_box.left) {
-//      bounding_box.left = x;
-//    }
-//    if (std::isnan(bounding_box.right) || bounding_box.right < x) {
-//      bounding_box.right = x;
-//    }
-//
-//    if (std::isnan(bounding_box.bottom) || y < bounding_box.bottom) {
-//      bounding_box.bottom = y;
-//    }
-//    if (std::isnan(bounding_box.top) || y < bounding_box.top) {
-//      bounding_box.top = y;
-//    }
-//  }
-//  return bounding_box;
-  return {};
+  return CoordinateBoundingBox{center_.x, center_.x, center_.y, center_.y};
+
+  CoordinateBoundingBox bounding_box;
+  for (auto& p : marker_curve_.points) {
+    auto x = p.x, y = p.y;
+    if (std::isnan(bounding_box.left) || x < bounding_box.left) {
+      bounding_box.left = x;
+    }
+    if (std::isnan(bounding_box.right) || bounding_box.right < x) {
+      bounding_box.right = x;
+    }
+
+    if (std::isnan(bounding_box.bottom) || y < bounding_box.bottom) {
+      bounding_box.bottom = y;
+    }
+    if (std::isnan(bounding_box.top) || y < bounding_box.top) {
+      bounding_box.top = y;
+    }
+  }
+  return bounding_box;
+  // return {};
 }
 
 void Marker::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
