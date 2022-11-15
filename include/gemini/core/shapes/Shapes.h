@@ -14,10 +14,12 @@ namespace gemini::core {
 // Forward declaration to Canvas.
 class Canvas;
 
+//! \brief An abstract point in some two dimensional geometric space.
 struct GeometricPoint {
   double x{}, y{};
 };
 
+//! \brief Return the point that results from rotating the input point an angle theta around the origin.
 GeometricPoint Rotate(const GeometricPoint& p, double theta);
 
 
@@ -27,7 +29,8 @@ class GEMINI_EXPORT Shape {
   //! \brief Raster a shape onto a bitmap.
   virtual void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const;
 
-  //! \brief Get a bounding box for the shape.
+  //! \brief Get a bounding box for the shape, in coordinate space. If the shape does not have coordinates defined
+  //! in the x or y directions, the bounds may be NaN.
   NO_DISCARD virtual CoordinateBoundingBox GetBoundingBox() const = 0;
 
   //! \brief Set the default z order for the shape.

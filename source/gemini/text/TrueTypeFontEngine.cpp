@@ -74,13 +74,13 @@ SpacingInfo TrueTypeFontEngine::GetSpacing(uint16 char_number) const {
   auto spacing = font_->GetSpacing(glyph_index);
 
   double scale = GetScale();
-  spacing.xmin *= scale;
-  spacing.ymin *= scale;
-  spacing.width *= scale;
-  spacing.height *= scale;
-  spacing.lsb *= scale;
-  spacing.rsb *= scale;
-  spacing.advance *= scale;
+  spacing.xmin = static_cast<int16>(spacing.xmin * scale);
+  spacing.ymin = static_cast<int16>(spacing.ymin * scale);
+  spacing.width = static_cast<int16>(spacing.width * scale);
+  spacing.height = static_cast<int16>(spacing.height * scale);
+  spacing.lsb = static_cast<int16>(spacing.lsb * scale);
+  spacing.rsb = static_cast<int16>(spacing.rsb * scale);
+  spacing.advance = static_cast<int16>(spacing.advance * scale);
 
   return spacing;
 }
