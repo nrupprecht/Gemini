@@ -34,6 +34,14 @@ class GEMINI_EXPORT TextBox : public gemini::core::Shape {
 
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
 
+  //! \brief Set the text bounding box.
+  void SetLocation(const CanvasLocation& location) override;
+
+  // TODO: Implement. It should be possible to calculate beforehand what dimensions the text will have.
+  NO_DISCARD std::optional<double> GetWidth() const override { return {}; }
+  // TODO: Implement. It should be possible to calculate beforehand what dimensions the text will have.
+  NO_DISCARD std::optional<double> GetHeight() const override { return {}; }
+
  private:
 
   void drawOnBitmap(gemini::core::Bitmap& bitmap, const gemini::core::Canvas* canvas) const override;

@@ -36,6 +36,10 @@ CoordinateBoundingBox TextBox::GetBoundingBox() const {
   return { nan, nan, nan, nan };
 }
 
+void TextBox::SetLocation(const CanvasLocation& location) {
+  anchor_point_ = Point{static_cast<double>(location.left), static_cast<double>(location.bottom)};
+}
+
 void TextBox::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {
   GEMINI_REQUIRE(0 < font_size_, "font size must be > 0");
   GEMINI_REQUIRE(ttf_, "there is no font engine");

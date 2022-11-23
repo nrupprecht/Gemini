@@ -22,7 +22,8 @@ class ScatterPlotRender : public Render {
       // We will choose a default (circle) plot marker if the plot marker is null.
       return x.size() == y.size() && !x.empty();
     }
-    // void RegisterWithManager(Manager& manager) const override {}
+
+    void RegisterWithManager(Manager& manager) override {}
 
     void WriteToCanvas(core::Canvas& plotting_canvas) const override {
       if (x.empty()) {

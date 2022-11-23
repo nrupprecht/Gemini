@@ -24,7 +24,7 @@ GeometricPoint Rotate(const GeometricPoint& p, double theta);
 
 
 //! \brief Abstract base class for shapes that can be drawn on bitmaps.
-class GEMINI_EXPORT Shape {
+class GEMINI_EXPORT Shape : public Locatable {
  public:
   //! \brief Raster a shape onto a bitmap.
   virtual void DrawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const;
@@ -64,6 +64,9 @@ class GEMINI_EXPORT Line : public Shape {
   color::PixelColor color = color::Black;
 
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
+
+  // TODO: How to best implement this?
+  void SetLocation(const CanvasLocation& location) override {}
 };
 
 // Concrete classes
@@ -73,6 +76,9 @@ class GEMINI_EXPORT BresenhamLine final : public Line {
   BresenhamLine(Point first, Point second, color::PixelColor color)
   : Line(first, second, color)
   {}
+
+  // TODO: How to best implement this?
+  void SetLocation(const CanvasLocation& location) override {}
 
  private:
   void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
@@ -84,6 +90,9 @@ class GEMINI_EXPORT XiaolinWuLine final : public Line {
   : Line(first, second, color)
   {}
 
+  // TODO: How to best implement this?
+  void SetLocation(const CanvasLocation& location) override {}
+
  private:
   void drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const override;
 };
@@ -93,6 +102,9 @@ class GEMINI_EXPORT XiaolinWuThickLine final : public Line {
   XiaolinWuThickLine(Point first, Point second, color::PixelColor color, double thickness = 2)
   : Line(first, second, color), pixel_thickness(thickness)
   {}
+
+  // TODO: How to best implement this?
+  void SetLocation(const CanvasLocation& location) override {}
 
   double pixel_thickness;
 
@@ -105,6 +117,9 @@ class GEMINI_EXPORT Ray final : public Shape {
   Ray(Point base, Displacement ray, color::PixelColor color, double thickness)
   : base_(base), ray_(ray), color_(color), thickness_(thickness)
   {}
+
+  // TODO: How to best implement this?
+  void SetLocation(const CanvasLocation& location) override {}
 
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
  private:
@@ -125,6 +140,9 @@ struct GEMINI_EXPORT Circle final : public Shape {
   Point center{};
   Distance radius{};
   color::PixelColor color = color::Black;
+
+  // TODO: How to best implement this?
+  void SetLocation(const CanvasLocation& location) override {}
 
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
 

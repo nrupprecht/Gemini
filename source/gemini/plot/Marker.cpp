@@ -12,16 +12,19 @@ using namespace gemini::core;
 using namespace gemini::plot::marker;
 using namespace gemini::core::shapes;
 
-void Marker::PlaceMarker(const gemini::Point& center) {
+Marker& Marker::PlaceMarker(const gemini::Point& center) {
   center_ = center;
+  return *this;
 }
 
-void Marker::SetColor(const color::PixelColor& color) {
+Marker& Marker::SetColor(const color::PixelColor& color) {
   color_ = color;
+  return *this;
 }
 
-void Marker::SetScale(double scale) {
+Marker& Marker::SetScale(double scale) {
   scale_ = scale;
+  return *this;
 }
 
 CoordinateBoundingBox Marker::GetBoundingBox() const {

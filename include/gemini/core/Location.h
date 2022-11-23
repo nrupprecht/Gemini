@@ -2,11 +2,11 @@
 // Created by Nathaniel Rupprecht on 2/5/22.
 //
 
-#ifndef GEMINI_INCLUDE_GEMINI_CORE_LOCATION_H_
-#define GEMINI_INCLUDE_GEMINI_CORE_LOCATION_H_
+#pragma once
 
 #include <gemini/export.hpp>
 #include <numeric>
+#include <optional>
 
 namespace gemini {
 
@@ -16,9 +16,7 @@ enum class GEMINI_EXPORT LocationType {
   Proportional, Coordinate, Pixels
 };
 
-// TODO: Switch to using flags?
-
-enum LocationTypeFlags : unsigned char {
+enum LocationTypeFlags : Byte {
   PixelsX       = 0b00000001,
   CoordinatesX  = 0b00000010,
   ProportionalX = 0b00000100,
@@ -64,6 +62,7 @@ inline bool IsRelativeY(Byte flags) {
 // --> End speculative section.
 
 
+//! \brief A point on a canvas. The meaning of the x and y values can be specified separately.
 struct GEMINI_EXPORT Point {
   double x = std::numeric_limits<double>::quiet_NaN();
   double y = std::numeric_limits<double>::quiet_NaN();
@@ -93,6 +92,7 @@ struct GEMINI_EXPORT Displacement {
   LocationType type_dx, type_dy;
 };
 
+//! \brief Represents a distance. Can be used to represent, e.g., the radius of a circle.
 struct GEMINI_EXPORT Distance {
   double distance;
   LocationType type;
@@ -106,5 +106,34 @@ struct GEMINI_EXPORT CoordinateBoundingBox {
   double top = std::numeric_limits<double>::quiet_NaN();
 };
 
+
+//! \brief Encodes where on a canvas an object should be located.
+struct GEMINI_EXPORT CanvasLocation {
+  int left{}, bottom{}, right{}, top{};
+
+  constexpr bool operator==(const CanvasLocation& rhs) const {
+    return std::tie(left, bottom, right, top) == std::tie(rhs.left, rhs.bottom, rhs.right, rhs.top);
+  }
+
+  friend std::ostream& operator<<(std::ostream& out, const CanvasLocation& location) {
+    out << "{ L=" << location.left << ", R=" << location.right
+        << ", B=" << location.bottom << ", T=" << location.top << " }";
+    return out;
+  }
+};
+
+
+//! \brief Base interface for objects that can be put in relationships with other Locatable objects in an image.
+class Locatable {
+ public:
+  //! \brief If the locatable has a predefined width, get it. By default, returns that the width is not defined yet.
+  NO_DISCARD virtual std::optional<double> GetWidth() const { return {}; }
+  //! \brief If the locatable has a predefined height, get it. By default, returns that the height is not defined yet.
+  NO_DISCARD virtual std::optional<double> GetHeight() const { return {}; }
+
+  //! \brief Set the location of the locatable object after calculating where it should go.
+  virtual void SetLocation(const CanvasLocation& location) = 0;
+};
+
+
 }
-#endif //GEMINI_INCLUDE_GEMINI_CORE_LOCATION_H_

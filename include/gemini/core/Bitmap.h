@@ -24,6 +24,9 @@ struct GEMINI_EXPORT PixelColor {
 
   unsigned char red{}, green{}, blue{}, alpha = 255;
 
+  //! \brief Default comparison operator.
+  friend auto operator<=>(const PixelColor&, const PixelColor&) = default;
+
   friend PixelColor operator*(double mult, const PixelColor& color) {
     return PixelColor{
         static_cast<unsigned char>(mult * color.red),

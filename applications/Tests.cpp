@@ -152,7 +152,7 @@ void test_2() {
 }
 
 void test_3() {
-  gemini::plot::Figure figure(1024, 1024);
+  gemini::plot::Figure figure(2048, 2048);
 
   auto PI = 3.14159265;
 
@@ -194,6 +194,10 @@ void test_3() {
   marker.SetScale(10.);
   marker.SetColor(gemini::core::color::Blue);
 
+  gemini::plot::marker::Point point;
+  point.SetScale(15.);
+  point.SetColor(gemini::core::color::Green);
+
   f0_0.AddRender(
       gemini::plot::renders::ScatterPlotRender()
           .XValues(x)
@@ -222,7 +226,7 @@ void test_3() {
           .XValues(x4)
           .YValues(y4)
           .Label("My third right sub-plot")
-          .Markers(marker)
+          .Markers(point.Copy()->SetColor(gemini::core::color::Black))
           .Color(gemini::core::color::Black)
   );
 
@@ -231,7 +235,7 @@ void test_3() {
           .XValues(x5)
           .YValues(y5)
           .Label("My fourth right sub-plot")
-          .Markers(marker)
+          .Markers(point)
           .Color(gemini::core::color::PixelColor(200, 120, 15))
   );
 

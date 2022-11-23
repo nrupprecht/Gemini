@@ -9,6 +9,7 @@
 #include "gemini/plot/Marker.h"
 #include "gemini/plot/Render.h"
 #include "gemini/core/Bitmap.h"
+#include <typeindex>
 
 namespace gemini::plot {
 
@@ -53,6 +54,55 @@ inline GEMINI_EXPORT std::vector<core::color::PixelColor> ColorPaletteHLS() {
   };
 }
 
+class Manager {
+ public:
+  //! \brief Request the next color in the cycle for a particular render type.
+  //!
+  //! If a color palette is not set for renders of this type, a new entry
+  //! is created for this type and is given the default color palette.
+  template<typename T> requires std::is_base_of_v<Render, T>
+  core::color::PixelColor RequestColor() {
+    auto idx = std::type_index(typeid(T));
+
+    // Make sure there is a place allocated for this Render type.
+    if (palettes_.find(idx) == palettes_.end()) {
+      palettes_[idx] = {0, default_color_palette_};
+    }
+
+    auto& [color_index, palette] = palettes_[idx];
+    auto& color = palette[color_index];
+    color_index = (color_index + 1) % static_cast<int>(palette.size());
+    return color;
+  }
+
+  template<typename T> requires std::is_base_of_v<Render, T>
+  void ResetColorCycle() {
+    auto idx = std::type_index(typeid(T));
+
+    // Make sure there is a place allocated for this Render type.
+    if (auto it = palettes_.find(idx); it != palettes_.end()) {
+      it->second.first = 0; // Reset the cycle.
+    }
+  }
+
+  //! \brief Set the color cycle for a specific Render type.
+  template<typename T> requires std::is_base_of_v<Render, T>
+  void SetColorPalette(const std::vector<core::color::PixelColor>& palette) {
+    palettes_[std::type_index(typeid(T))] = {0, palette};
+  }
+
+  void SetDefaultColorPalette(const std::vector<core::color::PixelColor>& palette) {
+    GEMINI_REQUIRE(!palette.empty(), "there must be at least one color in a color palette");
+    default_color_palette_ = palette;
+  }
+
+ private:
+  //! \brief The default color cycle, used for creating new palettes.
+  std::vector<core::color::PixelColor> default_color_palette_ = DefaultColorPalette();
+
+  //! \brief Color palettes, stored on a per-Render type basis.
+  std::map<std::type_index, std::pair<int, std::vector<core::color::PixelColor>>> palettes_;
+};
 
 //! \brief A plotting unit, consisting of a Render space and potentially axes, labels, etc.
 class GEMINI_EXPORT Plot {
@@ -71,7 +121,7 @@ class GEMINI_EXPORT Plot {
   void ClearYLabel();
 
  protected:
-  void addRendersToCanvas() const;
+  void addRendersToCanvas();
 
   void initializeCanvases(const std::shared_ptr<core::Canvas>& canvas);
 
@@ -90,6 +140,9 @@ class GEMINI_EXPORT Plot {
 
   //! \brief Vector of objects that should be rendered on the plot.
   std::vector<Render> renders_;
+
+  //! \brief default color cycle for assigning plot colors.
+  std::vector<core::color::PixelColor> color_palette_ = DefaultColorPalette();
 };
 
 class SubFigure;

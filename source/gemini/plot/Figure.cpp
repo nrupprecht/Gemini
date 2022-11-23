@@ -83,7 +83,7 @@ void Plot::ClearYLabel() {
   ylabel_ = {};
 }
 
-void Plot::addRendersToCanvas() const {
+void Plot::addRendersToCanvas() {
   for (auto& render: renders_) {
     GEMINI_REQUIRE(render.Validate(), "invalid Render object detected");
     render.WriteToCanvas(*plot_surface_);
@@ -98,9 +98,13 @@ void Plot::addRendersToCanvas() const {
     auto label = std::make_shared<text::TextBox>(GlobalFontManager::GetFontEngine());
     label->AddText(*xlabel_);
     label->SetFontSize(8);  // TODO: Make controllable.
-    label->SetAnchor(gemini::Point{ 0.5, 10, LocationType::Proportional, LocationType::Pixels });
+    // label->SetAnchor(gemini::Point{ 0.5, 10, LocationType::Proportional, LocationType::Pixels });
 
     full_canvas_->AddShape(label);
+
+    image_.RegisterLocatable(label.get());
+    image_.Relation_Fix(label.get(), CanvasPart::Top, plot_surface_.get(), CanvasPart::Bottom);
+    image_.Relation_Fix(label.get(), CanvasPart::Right, plot_surface_.get(), CanvasPart::Right);
   }
   // Check whether we need a y-axis label.
   if (ylabel_) {
@@ -108,7 +112,11 @@ void Plot::addRendersToCanvas() const {
     label->AddText(*ylabel_);
     label->SetFontSize(8);
     label->SetAngle(0.5 * math::PI);
-    label->SetAnchor(gemini::Point{ 25, 0.5, LocationType::Pixels, LocationType::Proportional });
+    // label->SetAnchor(gemini::Point{ 25, 0.5, LocationType::Pixels, LocationType::Proportional });
+
+    image_.RegisterLocatable(label.get());
+    image_.Relation_Fix(label.get(), CanvasPart::Right, plot_surface_.get(), CanvasPart::Left);
+    image_.Relation_Fix(label.get(), CanvasPart::CenterY, plot_surface_.get(), CanvasPart::CenterY);
 
     full_canvas_->AddShape(label);
   }

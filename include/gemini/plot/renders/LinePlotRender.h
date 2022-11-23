@@ -19,7 +19,8 @@ class LinePlotRender : public Render {
     NO_DISCARD bool Validate() const override {
       return x.size() == y.size() && !x.empty();
     }
-    // void RegisterWithManager(Manager& manager) const override {}
+
+    void RegisterWithManager(Manager& manager) override {}
 
     void WriteToCanvas(core::Canvas& plotting_canvas) const override {
       if (x.empty()) {

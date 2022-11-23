@@ -2,8 +2,7 @@
 // Created by Nathaniel Rupprecht on 2/13/22.
 //
 
-#ifndef GEMINI_INCLUDE_GEMINI_PLOT_MARKER_H_
-#define GEMINI_INCLUDE_GEMINI_PLOT_MARKER_H_
+#pragma once
 
 #include "gemini/core/shapes/BezierCuve.h"
 
@@ -12,19 +11,22 @@ namespace gemini::plot::marker {
 class GEMINI_EXPORT Marker : public core::Shape {
  public:
   //! \brief "Place" the marker at a coordinate point.
-  void PlaceMarker(const Point& center);
+  Marker& PlaceMarker(const Point& center);
 
   //! \brief Set the color of the marker.
-  void SetColor(const core::color::PixelColor& color);
+  Marker& SetColor(const core::color::PixelColor& color);
 
   //! \brief Set the marker scale.
-  void SetScale(double scale);
+  Marker& SetScale(double scale);
 
   //! \brief Returns a pointer to a deep copy of the marker.
   NO_DISCARD virtual std::shared_ptr<Marker> Copy() const = 0;
 
   //! \brief Base override, based on markers. Can be overridden by children.
   NO_DISCARD CoordinateBoundingBox GetBoundingBox() const override;
+
+  // TODO: Implement this. Scale curve and set center.
+  void SetLocation(const CanvasLocation& location) override {}
 
  protected:
   void drawOnBitmap(core::Bitmap& bitmap, const core::Canvas* canvas) const override;
@@ -66,4 +68,3 @@ MARKER_CLASS(Ex);
 MARKER_CLASS(Rectangle);
 
 }
-#endif //GEMINI_INCLUDE_GEMINI_PLOT_MARKER_H_
