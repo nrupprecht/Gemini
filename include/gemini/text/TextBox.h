@@ -38,9 +38,10 @@ class GEMINI_EXPORT TextBox : public gemini::core::Shape {
   void SetLocation(const CanvasLocation& location) override;
 
   // TODO: Implement. It should be possible to calculate beforehand what dimensions the text will have.
-  NO_DISCARD std::optional<double> GetWidth() const override { return {}; }
+  NO_DISCARD std::optional<double> GetWidth() const override;
+
   // TODO: Implement. It should be possible to calculate beforehand what dimensions the text will have.
-  NO_DISCARD std::optional<double> GetHeight() const override { return {}; }
+  NO_DISCARD std::optional<double> GetHeight() const override;
 
  private:
 

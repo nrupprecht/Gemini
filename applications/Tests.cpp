@@ -152,7 +152,7 @@ void test_2() {
 }
 
 void test_3() {
-  gemini::plot::Figure figure(2048, 2048);
+  gemini::plot::Figure figure(1024, 1024);
 
   auto PI = 3.14159265;
 
@@ -248,6 +248,7 @@ void test_3() {
   );
 
   f1_2.SetXLabel("My very good label");
+  f1_2.SetYLabel("A Y-axis label?");
 
   gemini::core::Bitmap bmp;
   try {

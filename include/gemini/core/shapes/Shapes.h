@@ -2,8 +2,7 @@
 // Created by Nathaniel Rupprecht on 11/28/21.
 //
 
-#ifndef GEMINI_INCLUDE_GEMINI_SHAPES_H_
-#define GEMINI_INCLUDE_GEMINI_SHAPES_H_
+#pragma once
 
 #include "gemini/core/Bitmap.h"
 #include "gemini/core/Location.h"
@@ -151,5 +150,3 @@ struct GEMINI_EXPORT Circle final : public Shape {
 };
 
 } // namespace gemini::core
-
-#endif //GEMINI_INCLUDE_GEMINI_SHAPES_H_

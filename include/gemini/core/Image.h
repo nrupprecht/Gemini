@@ -32,11 +32,18 @@ enum class GEMINI_EXPORT CanvasDimension {
 struct IndexedLocatables {
   std::vector<Locatable*> objs_;
 
-  void Add(Locatable* loc) {
+  //! \brief Add a locatable to the container. Only adds it if it is not already contained.
+  //!
+  //! \param loc The locatable to add.
+  //! \return If the locatable already existed in the container, return nullopt, otherwise, return the index of the
+  //!     locatable in the container.
+  std::optional<std::size_t> Add(Locatable* loc) {
     // Don't add if it is already contained.
     if (std::find(objs_.begin(), objs_.end(), loc) == objs_.end()) {
       objs_.push_back(loc);
+      return objs_.size() - 1;
     }
+    return {};
   }
 
   NO_DISCARD std::size_t Size() const {
@@ -333,7 +340,7 @@ class GEMINI_EXPORT Image {
   //! \param canvas2_num Which canvas (as an entry in the canvas vector) is the second canvas in the relationship.
   //! \param canvas2_part Which part of the second canvas is specified in the relationship.
   //! \param pixels_diff The pixel adjustment in the relationship.
-  void Relation_Fix(
+  std::shared_ptr<Fix> Relation_Fix(
       Locatable* canvas1,
       CanvasPart canvas1_part,
       Locatable* canvas2,
@@ -347,19 +354,19 @@ class GEMINI_EXPORT Image {
   //!         or
   //!     Canvas[N1].{Left, Right, ...} = (1 - lambda) * Canvas[N2].Dim.Lesser + lambda * Canvas[N2].Dim.Greater
   //!
-  void Scale_Fix(
+  std::shared_ptr<Fix> Scale_Fix(
       Locatable* canvas1,
       CanvasPart canvas1_part,
       Locatable* canvas2,
       CanvasDimension dimension,
       double lambda);
 
-  void Dimensions_Fix(
+  std::shared_ptr<Fix> Dimensions_Fix(
       Locatable* canvas,
       CanvasDimension dim,
       double extent);
 
-  void RelativeSize_Fix(
+  std::shared_ptr<Fix> RelativeSize_Fix(
       Locatable* canvas1,
       CanvasDimension dimension1,
       Locatable* canvas2,
@@ -382,7 +389,7 @@ class GEMINI_EXPORT Image {
   NO_DISCARD int GetHeight() const;
 
   //! \brief Register a new locatable with the Image.
-  void RegisterLocatable(Locatable* locatable);
+  std::optional<std::size_t> RegisterLocatable(Locatable* locatable);
 
   //! \brief Render the Image to a bitmap.
   NO_DISCARD Bitmap ToBitmap() const;
@@ -412,33 +419,33 @@ class Image::Impl {
   Impl();
   Impl(int width, int height);
 
-  void Relation_Fix(
+  std::shared_ptr<Fix> Relation_Fix(
       Locatable* canvas1,
       CanvasPart canvas1_part,
       Locatable* canvas2,
       CanvasPart canvas2_part,
       double pixels_diff = 0.);
 
-  void Scale_Fix(
+  std::shared_ptr<Fix> Scale_Fix(
       Locatable* canvas1,
       CanvasPart canvas1_part,
       Locatable* canvas2,
       CanvasDimension dimension,
       double lambda);
 
-  void Dimensions_Fix(
+  std::shared_ptr<Fix> Dimensions_Fix(
       Locatable* canvas,
       CanvasDimension dim,
       double extent);
 
-  void RelativeSize_Fix(
+  std::shared_ptr<Fix> RelativeSize_Fix(
       Locatable* canvas1,
       CanvasDimension dimension1,
       Locatable* canvas2,
       CanvasDimension dimension2,
       double scale);
 
-  void AddFix(const std::shared_ptr<Fix>& fix);
+  std::shared_ptr<Fix> AddFix(const std::shared_ptr<Fix>& fix);
 
   void ClearRelationships();
 
@@ -449,7 +456,7 @@ class Image::Impl {
   int GetWidth() const;
   int GetHeight() const;
 
-  void RegisterLocatable(Locatable* locatable);
+  std::optional<std::size_t> RegisterLocatable(Locatable* locatable);
 
   NO_DISCARD Bitmap ToBitmap() const;
 

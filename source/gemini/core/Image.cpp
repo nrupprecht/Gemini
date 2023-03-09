@@ -26,42 +26,43 @@ Image::Impl::Impl(int width, int height)
   RegisterCanvas(master_canvas_);
 }
 
-void Image::Impl::Relation_Fix(
+std::shared_ptr<Fix> Image::Impl::Relation_Fix(
     Locatable* canvas1,
     CanvasPart canvas1_part,
     Locatable* canvas2,
     CanvasPart canvas2_part,
     double pixels_diff) {
-  AddFix(std::make_shared<FixRelationship>(canvas1, canvas2, canvas1_part, canvas2_part, pixels_diff));
+  return AddFix(std::make_shared<FixRelationship>(canvas1, canvas2, canvas1_part, canvas2_part, pixels_diff));
 }
 
-void Image::Impl::Scale_Fix(
+std::shared_ptr<Fix> Image::Impl::Scale_Fix(
     Locatable* canvas1,
     CanvasPart canvas1_part,
     Locatable* canvas2,
     CanvasDimension dimension,
     double lambda) {
-  AddFix(std::make_shared<FixScale>(canvas1, canvas2, canvas1_part, dimension, lambda));
+  return AddFix(std::make_shared<FixScale>(canvas1, canvas2, canvas1_part, dimension, lambda));
 }
 
-void Image::Impl::Dimensions_Fix(
+std::shared_ptr<Fix> Image::Impl::Dimensions_Fix(
     Locatable* canvas,
     CanvasDimension dim,
     double extent) {
-  AddFix(std::make_shared<FixDimensions>(canvas, dim, extent));
+  return AddFix(std::make_shared<FixDimensions>(canvas, dim, extent));
 }
 
-void Image::Impl::RelativeSize_Fix(
+std::shared_ptr<Fix> Image::Impl::RelativeSize_Fix(
     Locatable* canvas1,
     CanvasDimension dimension1,
     Locatable* canvas2,
     CanvasDimension dimension2,
     double scale) {
-  AddFix(std::make_shared<FixRelativeSize>(canvas1, canvas2, dimension1, dimension2, scale));
+  return AddFix(std::make_shared<FixRelativeSize>(canvas1, canvas2, dimension1, dimension2, scale));
 }
 
-void Image::Impl::AddFix(const std::shared_ptr<Fix>& fix) {
+std::shared_ptr<Fix> Image::Impl::AddFix(const std::shared_ptr<Fix>& fix) {
   fixes_.push_back(fix);
+  return fixes_.back();
 }
 
 void Image::Impl::ClearRelationships() {
@@ -87,8 +88,8 @@ int Image::Impl::GetHeight() const {
   return height_;
 }
 
-void Image::Impl::RegisterLocatable(Locatable* locatable) {
-  locatables_.Add(locatable);
+std::optional<std::size_t> Image::Impl::RegisterLocatable(Locatable* locatable) {
+  return locatables_.Add(locatable);
 }
 
 Bitmap Image::Impl::ToBitmap() const {
@@ -122,10 +123,16 @@ void Image::Impl::CalculateCanvasLocations() const {
     GEMINI_FAIL("no relationships, but there are multiple canvases");
   }
 
+  // Count how many locatables need relationships for their width or height.
+  int additional_fixes = 0;
+  for (auto& loc : locatables_.objs_) {
+    if (loc->GetWidth()) ++additional_fixes;
+    if (loc->GetHeight()) ++additional_fixes;
+  }
+
   // Represents the left, bottom, right, top (in that order) of each canvas (except the master canvas).
-  int dimensionality = 4 + static_cast<int>(fixes_.size());
+  int dimensionality = 4 + additional_fixes + static_cast<int>(fixes_.size());
   // Four columns for each canvas.
-  // int num_columns = 4 * static_cast<int>(canvases_.size());
   int num_columns = 4 * static_cast<int>(locatables_.Size());
   MatrixXd relationships = MatrixXd::Zero(dimensionality, num_columns);
   MatrixXd constants = MatrixXd::Zero(dimensionality, 1);
@@ -140,8 +147,27 @@ void Image::Impl::CalculateCanvasLocations() const {
   constants(2, 0) = width_;
   constants(3, 0) = height_;
 
+  // Add additional fixes for locatables with widths or heights.
+  std::vector<std::string> additional_descriptions;
+  int count = 0, count_loc = 0;
+  for (auto& loc : locatables_.objs_) {
+    if (auto width = loc->GetWidth(); width) {
+      FixDimensions fix(loc, CanvasDimension::X, *width);
+      fix.Create(4 + count, relationships, constants, locatables_);
+      additional_descriptions.emplace_back("Implicitly generated width for locatable " + std::to_string(count_loc));
+      ++count;
+    }
+    if (auto height = loc->GetHeight(); height) {
+      FixDimensions fix(loc, CanvasDimension::Y, *height);
+      fix.Create(4 + count, relationships, constants, locatables_);
+      additional_descriptions.emplace_back("Implicitly generated height for locatable " + std::to_string(count_loc));
+      ++count;
+    }
+    ++count_loc;
+  }
+
   for (auto i = 0l ; i < fixes_.size() ; ++i) {
-    fixes_[i]->Create(i + 4, relationships, constants, locatables_);
+    fixes_[i]->Create(4 + additional_fixes + i, relationships, constants, locatables_);
   }
 
   // Solve R X + b = 0 for X
@@ -172,7 +198,7 @@ void Image::Impl::CalculateCanvasLocations() const {
       std::cout << "Satisfied constraint # " << std::setw(3) << i << "         : ";
     }
 
-    for (auto j = 0 ; j < canvases_.size() ; ++j) {
+    for (auto j = 0 ; j < locatables_.Size() ; ++j) {
       for (auto k = 0 ; k < 4 ; ++k) {
         auto c = relationships(i, 4 * j + k);
         if (1.e-4 < std::abs(c)) {
@@ -186,25 +212,24 @@ void Image::Impl::CalculateCanvasLocations() const {
     }
     std::cout << " = " << expected;
     std::cout << ", Actually = " << product;
+    // Description of main canvas constraints.
     if (i < 4) {
       std::cout << ", Fix is auto generated";
     }
+    // Description of implicitly generated width/height constraints.
+    else if (i < 4 + additional_fixes) {
+      std::cout << ", " << additional_descriptions[i - 4];
+    }
+    // Description of normal constraints.
     else {
-      std::cout << ", Fix type is '" << fixes_[i - 4]->Name() << "'";
+      auto idx = i - 4 - additional_fixes;
+      std::cout << ", Fix type is '" << fixes_[idx]->Name() << "'";
+      if (!fixes_[idx]->description.empty()) {
+        std::cout << ", Description: \"" << fixes_[idx]->description << "\"";
+      }
     }
+
     std::cout << std::endl;
-
-    if (i < 4) {
-      // pass
-    }
-    if (constraint_failed) {
-//      MatrixXd test = MatrixXd::Zero(1, num_columns);
-//      MatrixXd test_constants = MatrixXd::Zero(1, 1);
-//      fixes_[i - 4]->Create(0, test, test_constants);
-//
-//      std::cout << "Result of test = " << test << std::endl;
-    }
-
   }
 
   for (auto i = 0 ; i < canvases_.size() ; ++i) {
@@ -240,6 +265,8 @@ void Image::Impl::CalculateCanvasLocations() const {
       std::cout << "Unconstrained height";
     }
   }
+
+  std::cout << std::endl;
 
   for (int i = 0 ; i < num_columns / 4 ; ++i) {
     int base = 4 * i;
@@ -394,38 +421,38 @@ Image::Image()
 Image::Image(int width, int height)
     : impl_(std::make_shared<Impl>(width, height)) {}
 
-void Image::Relation_Fix(
+std::shared_ptr<Fix> Image::Relation_Fix(
     Locatable* canvas1,
     CanvasPart canvas1_part,
     Locatable* canvas2,
     CanvasPart canvas2_part,
     double pixels_diff) {
-  impl_->Relation_Fix(canvas1, canvas1_part, canvas2, canvas2_part, pixels_diff);
+  return impl_->Relation_Fix(canvas1, canvas1_part, canvas2, canvas2_part, pixels_diff);
 }
 
-void Image::Scale_Fix(
+std::shared_ptr<Fix> Image::Scale_Fix(
     Locatable* canvas1,
     CanvasPart canvas1_part,
     Locatable* canvas2,
     CanvasDimension dimension,
     double lambda) {
-  impl_->Scale_Fix(canvas1, canvas1_part, canvas2, dimension, lambda);
+  return impl_->Scale_Fix(canvas1, canvas1_part, canvas2, dimension, lambda);
 }
 
-void Image::Dimensions_Fix(
+std::shared_ptr<Fix> Image::Dimensions_Fix(
     Locatable* canvas,
     CanvasDimension dim,
     double extent) {
-  impl_->Dimensions_Fix(canvas, dim, extent);
+  return impl_->Dimensions_Fix(canvas, dim, extent);
 }
 
-void Image::RelativeSize_Fix(
+std::shared_ptr<Fix> Image::RelativeSize_Fix(
     Locatable* canvas1,
     CanvasDimension dimension1,
     Locatable* canvas2,
     CanvasDimension dimension2,
     double scale) {
-  impl_->RelativeSize_Fix(canvas1, dimension1, canvas2, dimension2, scale);
+  return impl_->RelativeSize_Fix(canvas1, dimension1, canvas2, dimension2, scale);
 }
 
 void Image::AddFix(const std::shared_ptr<Fix>& fix) {
@@ -452,8 +479,8 @@ int Image::GetHeight() const {
   return impl_->GetHeight();
 }
 
-void Image::RegisterLocatable(Locatable* locatable) {
-  impl_->RegisterLocatable(locatable);
+std::optional<std::size_t> Image::RegisterLocatable(Locatable* locatable) {
+  return impl_->RegisterLocatable(locatable);
 }
 
 Bitmap Image::ToBitmap() const {

@@ -38,6 +38,16 @@ CoordinateBoundingBox TextBox::GetBoundingBox() const {
 
 void TextBox::SetLocation(const CanvasLocation& location) {
   anchor_point_ = Point{static_cast<double>(location.left), static_cast<double>(location.bottom)};
+  anchor_point_.relative_to_master_x = true;
+  anchor_point_.relative_to_master_y = true;
+}
+
+std::optional<double> TextBox::GetWidth() const {
+  return 10;
+}
+
+std::optional<double> TextBox::GetHeight() const {
+  return 10;
 }
 
 void TextBox::drawOnBitmap(Bitmap& bitmap, const Canvas* canvas) const {

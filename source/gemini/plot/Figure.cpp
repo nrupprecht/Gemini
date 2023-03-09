@@ -103,8 +103,11 @@ void Plot::addRendersToCanvas() {
     full_canvas_->AddShape(label);
 
     image_.RegisterLocatable(label.get());
-    image_.Relation_Fix(label.get(), CanvasPart::Top, plot_surface_.get(), CanvasPart::Bottom);
-    image_.Relation_Fix(label.get(), CanvasPart::Right, plot_surface_.get(), CanvasPart::Right);
+    auto f1 = image_.Relation_Fix(label.get(), CanvasPart::Top, plot_surface_.get(), CanvasPart::Bottom);
+    auto f2 = image_.Relation_Fix(label.get(), CanvasPart::CenterX, plot_surface_.get(), CanvasPart::CenterX);
+
+    f1->SetDescription("Text box X - set under image");
+    f2->SetDescription("Text box X - centering");
   }
   // Check whether we need a y-axis label.
   if (ylabel_) {
@@ -114,11 +117,14 @@ void Plot::addRendersToCanvas() {
     label->SetAngle(0.5 * math::PI);
     // label->SetAnchor(gemini::Point{ 25, 0.5, LocationType::Pixels, LocationType::Proportional });
 
-    image_.RegisterLocatable(label.get());
-    image_.Relation_Fix(label.get(), CanvasPart::Right, plot_surface_.get(), CanvasPart::Left);
-    image_.Relation_Fix(label.get(), CanvasPart::CenterY, plot_surface_.get(), CanvasPart::CenterY);
-
     full_canvas_->AddShape(label);
+
+    image_.RegisterLocatable(label.get());
+    auto f1 = image_.Relation_Fix(label.get(), CanvasPart::Right, plot_surface_.get(), CanvasPart::Left);
+    auto f2 = image_.Relation_Fix(label.get(), CanvasPart::CenterY, plot_surface_.get(), CanvasPart::CenterY);
+
+    f1->SetDescription("Text box Y - set under image");
+    f2->SetDescription("Text box Y - centering");
   }
 }
 
